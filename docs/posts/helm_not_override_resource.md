@@ -15,7 +15,7 @@ Helm 3的应用在升级时，会根据[三路合并](https://helm.sh/docs/faq/c
 
 
 
-<!--- more --->
+<!-- more -->
 
 ## Helm 2 two-way 合并策略
 
