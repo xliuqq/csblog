@@ -61,3 +61,5 @@ nav:
     - data_intensive_system_book/1_data_system_basic.md
     - data_intensive_system_book/2_data_model_query_language.md
     - data_intensive_system_book/3_data_store_and_search.md
+  - 论文:
+    - paper/go_concurrency_bugs.md
