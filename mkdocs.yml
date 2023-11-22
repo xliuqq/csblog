@@ -17,6 +17,7 @@ theme:
     - navigation.tabs
     - navigation.tabs.sticky
     - navigation.top
+    - navigation.footer
   language: 'zh'
   icon:
     repo: fontawesome/brands/github
@@ -36,6 +37,7 @@ markdown_extensions:
           format: !!python/name:pymdownx.superfences.fence_code_format
   - pymdownx.tabbed:
       alternate_style: true 
+  - footnotes
 
 extra:
   github_repo: xliuqq/csblog

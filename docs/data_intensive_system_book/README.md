@@ -1,12 +1,11 @@
 ---
-date: 2023-10-23
-categories:
+tags:
   - 数据密集型系统
 ---
 
 # 数据密集型系统设计
 
-> Data Intensive Application System Design.
+> [Data Intensive Application System Design](./pdfs/Designing_Data-Intensive_Applications_-_Martin_Kleppmann.pdf)
 
 
 
