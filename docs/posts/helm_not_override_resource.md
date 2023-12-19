@@ -42,7 +42,7 @@ Helm 2 在升级过程中，会对比最近一次的chart manifest 和 `helm upg
 
 官网没有配置可以解决该问题，通过Github Issues 搜索，可以通过 `lookup` 函数解决
 
-- helm 3.13 版本的 `--dry-run`（进查看变更而不应用到集群） 参数支持`client`和`server`（支持 `lookup`）模式
+- helm 3.13 版本的 `--dry-run`（仅查看变更而不应用到集群） 参数支持`client`和`server`（支持 `lookup`）模式
 
 ```yaml
 apiVersion: v1
