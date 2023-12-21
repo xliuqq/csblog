@@ -1,6 +1,6 @@
 ---
 date: 2023-10-23
-readtime: 5 min
+readtime: 5
 categories:
   - 并发
 ---

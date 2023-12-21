@@ -1,3 +1,12 @@
+---
+date: 2023-12-20
+readtime: 10
+categories:
+  - Yarn
+---
+
+
+
 # Hadoop Yarn Mock 测试
 
 当系统与 Yarn 集成时，一般会通过 YarnClient / AdminProtocol 以及 Restful 接口等方式跟 Yarn 通信。

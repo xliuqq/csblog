@@ -1,6 +1,6 @@
 ---
 date: 2023-12-18
-readtime: 5 min
+readtime: 5
 categories:
   - HDFS
 ---
