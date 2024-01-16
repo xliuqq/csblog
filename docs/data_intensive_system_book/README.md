@@ -5,7 +5,7 @@ tags:
 
 # 数据密集型系统设计
 
-> [Data Intensive Application System Design](./pdfs/Designing_Data-Intensive_Applications_-_Martin_Kleppmann.pdf)
+> [Data Intensive Application System Design](https://www.alipan.com/s/2yoAdUwdtJ6)
 
 
 
