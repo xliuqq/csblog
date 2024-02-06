@@ -130,7 +130,7 @@ java.class.path -> C:\Program Files\JetBrains\IntelliJ IDEA 2023.3.2\plugins\mav
 开发插件时，使用 maven core 的依赖插件时，如 guava，common-lang3，在实际使用插件时会出现类不存在的情况：
 
 - maven 软件的 `lib`目录下，存在这些第三方依赖 jar 包；
-- 但在插件运行时，其类加载器没有这些 jar 包；？？
+- 但在插件运行时，其类加载器没有这些 jar 包，插件需要显示指定该依赖；
 
 
 
@@ -141,6 +141,8 @@ maven 插件开发时，其类加载不包含工程代码路径，因此无法�
 - 获取项目代码的类的相关信息，可以通过自定义类加载器实现，下面是示例：
 
 ```java
+// requiresDependencyResolution 会将所有的COMPILE依赖（包括递归依赖），都放到 project 的 CompileClasspathElements 中。
+@Mojo(name = "generate-doc", defaultPhase = LifecyclePhase.COMPILE, requiresDependencyResolution = ResolutionScope.COMPILE)
 public class AnnotationMojo extends AbstractMojo {
     @Parameter(defaultValue = "${project}", required = true, readonly = true)
     MavenProject project;
