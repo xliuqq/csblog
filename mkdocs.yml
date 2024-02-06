@@ -60,8 +60,11 @@ nav:
     - index.md
     - 标签: tags.md
   - 数据密集型系统设计: 
+    - data_intensive_system_book/README.md
     - data_intensive_system_book/1_data_system_basic.md
     - data_intensive_system_book/2_data_model_query_language.md
     - data_intensive_system_book/3_data_store_and_search.md
+  - 算法谜题:
+    - algorithmic_puzzles/README.md
   - 论文:
     - paper/go_concurrency_bugs.md
