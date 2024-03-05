@@ -108,12 +108,43 @@ tags:
 - 数据库中**读写的比例和次数**；
 - **缓存命中率、同时在线人数**等；
 
-如对于类似Tweet的在线关注通知的应用场景：
+以推特在 2012 年 11 月发布的数据$^{[6]}$为例。推特的两个主要业务是：
 
 - 发布Tweet消息：用户可以**快速推送新消息到所有关注者**，平均大约4.6k request/sec，峰值约12k request/sec；
 - 主页时间线（Home timeline）浏览：平均**300K request/sec 查看关注对象的最新消息**；
 
-根据其[实现](../../code_guide/algs/applications.md#Tweet 关注事件推送)，每个用户者的分布情况（可以结合用户使用频率进行加权）是可扩展的关键负载因素。
+推特的伸缩性挑战来自 **扇出（fan-out）**：每个用户关注了很多人，也被很多人关注。
+
+一般有两种思路：
+
+- 拉取：将发送的新的 tweet 插入到全局的 tweet 集合。当用户查看时间线时，首先查找所有的关注对象，列出这些人的 tweet，最后一时间为序将进行排序合并。
+
+  - 用户只有查看时才会去拉取，但是每次查看时现去拉取，**呈现速度较慢**；
+
+  ```sql
+  # SQL code
+  SELECT tweet.*, user.* FROM tweets JOIN users ON tweets.sender_id = users.id
+  JOIN follows ON follows.followee_id = users.id
+  WHERE follows.follower_id = current_user
+  ```
+
+  ![**推特主页时间线的关系型模式简单实现**](pics/fig1-2.png)
+
+- 推送：对每个用户的时间线维护一个缓存，类似每个用户一个 tweet 邮箱。当用户推送新 tweet 时，查询其关注者，将 tweet 插入到每个关注着的时间线缓存中
+
+  - 读取主页时间线的请求开销很小，因为结果已经提前计算好；
+  - **写放大**：粉丝多的人发的一个 tweet 会导致 3000 万笔写入，对于响应性能/存储是挑战；
+
+  ![**用于分发推特至关注者的数据流水线，2012 年 11 月的负载参数**](pics/fig1-3.png)
+
+Tweet 后面采用方法2，效果更好，因为发推频率比查询主页时间线的频率几乎低了两个数量级。
+
+- 推特尝试在 5 秒内向粉丝发送推文：3000 万的粉丝大 V 的推文导致主页时间线缓存的 3000 万次的及时写入
+
+关键点：每个用户者的分布情况（可以结合用户使用频率进行加权）是可扩展的关键负载因素。
+
+- 大多数用户发的推文会被扇出写入其粉丝主页时间线缓存中，海量粉丝的用户（即名流）除外；
+- 当用户读取主页时间线时，分别地获取出该用户所关注的每位名流的推文，再与用户的主页时间线缓存合并；
 
 ### 描述性能
 
@@ -184,12 +215,9 @@ tags:
 
 ## 参考文献
 
-[1]. "Hard Driver Reliability Update-Sep 2014."  backblaze.com .
-
-[2]. "Leap Second Crashes Half the Internet,"  somebits.com, 2012.
-
-[3]. "Why Do Internet Services Fail, and What Can Be Done About It?," USITS, 2003.
-
-[4]. "The Real Cost of Slow Time vs Downtime," webperformance-today.com, 2014.
-
-[5]. "SImple Made Easy," Rich Hickey at *Strange loop*, 2011. 
+1. Brian Beach: “[Hard Drive Reliability Update – Sep 2014](https://www.backblaze.com/blog/hard-drive-reliability-update-september-2014/),” *backblaze.com*, September 23, 2014.
+2. Nelson Minar: “[Leap Second Crashes Half the Internet](http://www.somebits.com/weblog/tech/bad/leap-second-2012.html),” *somebits.com*, July 3, 2012.
+3. David Oppenheimer, Archana Ganapathi, and David A. Patterson: “[Why Do Internet Services Fail, and What Can Be Done About It?](http://static.usenix.org/legacy/events/usits03/tech/full_papers/oppenheimer/oppenheimer.pdf),” at *4th USENIX Symposium on Internet Technologies and Systems* (USITS), March 2003.
+4. Tammy Everts: “[The Real Cost of Slow Time vs Downtime](http://www.webperformancetoday.com/2014/11/12/real-cost-slow-time-vs-downtime-slides/),” *webperformancetoday.com*, November 12, 2014.
+5. Rich Hickey: “[Simple Made Easy](http://www.infoq.com/presentations/Simple-Made-Easy),” at *Strange Loop*, September 2011.
+6. Raffi Krikorian: “[Timelines at Scale](http://www.infoq.com/presentations/Twitter-Timeline-Scalability),” at *QCon San Francisco*, November 2012.
