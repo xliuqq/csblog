@@ -64,7 +64,15 @@ nav:
     - data_intensive_system_book/1_data_system_basic.md
     - data_intensive_system_book/2_data_model_query_language.md
     - data_intensive_system_book/3_data_store_and_search.md
+    - data_intensive_system_book/4_encoding_and_evolution.md
+    - data_intensive_system_book/5_replication.md
+    - data_intensive_system_book/6_partitions.md
   - 算法谜题:
     - algorithmic_puzzles/README.md
   - 论文:
-    - paper/go_concurrency_bugs.md
+    - go并发bugs: paper/go_concurrency_bugs.md
+    - HPC中的作业调度: paper/job_scheduling_in_hpc.md
+  - Web后端开发:
+    - 总览: web_backend/README.md
+    - 切面编程(Java): web_backend/aop_java.md
+    
