@@ -59,16 +59,22 @@ nav:
   - 博客:
     - index.md
     - 标签: tags.md
-  - 数据密集型系统设计: 
-    - data_intensive_system_book/README.md
-    - data_intensive_system_book/1_data_system_basic.md
-    - data_intensive_system_book/2_data_model_query_language.md
-    - data_intensive_system_book/3_data_store_and_search.md
-    - data_intensive_system_book/4_encoding_and_evolution.md
-    - data_intensive_system_book/5_replication.md
-    - data_intensive_system_book/6_partitions.md
+  - 书籍:
+    - 数据密集型系统设计: 
+      - data_intensive_system_book/README.md
+      - data_intensive_system_book/1_data_system_basic.md
+      - data_intensive_system_book/2_data_model_query_language.md
+      - data_intensive_system_book/3_data_store_and_search.md
+      - data_intensive_system_book/4_encoding_and_evolution.md
+      - data_intensive_system_book/5_replication.md
+      - data_intensive_system_book/6_partitions.md
   - 算法谜题:
     - algorithmic_puzzles/README.md
+  - 课程:
+    - 操作系统设计与实现(2023): 
+      - 0.整体大纲: courses/os_lab/README.md
+      - 1.操作系统概述: courses/os_lab/01-os_introduction.md
+      - 2.应用视角的操作系统: courses/os_lab/02-os_appview.md
   - 论文:
     - go并发bugs: paper/go_concurrency_bugs.md
     - HPC中的作业调度: paper/job_scheduling_in_hpc.md

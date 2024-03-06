@@ -139,18 +139,131 @@ graph LR
 
 <font color=red>在此前提下，任何翻译都是合法的</font> (例如我们期望更快或更短的代码)
 
+- 编译优化的实际实现：(context-sensitive) rewriting rules
+- 代码示例：观测编译器优化行为和 compiler barrier
+
 
 
 ## 操作系统上的软件（应用程序）
 
-底层系统实现（通过阅读 busybox 的早期版本的源代码）
+### 操作系统中的任何程序
 
+> 任何程序 = minimal.S = 调用 syscall 的状态机
 
+可执行文件是操作系统中的对象
 
-Trace
+- <font color="red">与大家日常使用的文件 (a.c, README.txt) 没有本质区别</font>
+- 操作系统提供 API 打开、读取、改写 (都需要相应的权限)
 
- 
+查看可执行文件：`vim,cat,xxd`都可以直接 “查看” 可执行文件
 
+- `vim` 中二进制的部分无法 “阅读”，但可以看到字符串常量
+- 使用 `xxd` 可以看到文件以 `"\x7f" "ELF"` 开头
+- Vscode 有 binary editor 插件
 
+### 系统中常见的应用程序
 
-ToyBoy、BusyBox
+Core Utilities (coreutils)
+
+- *Standard* programs for text and file manipulation
+- 系统中安装的是  [GNU Coreutils](https://www.gnu.org/software/coreutils/)
+  - 有较小的替代品 [busybox](https://www.busybox.net/)
+  - 底层系统实现（通过阅读 busybox 的早期版本的源代码）
+
+系统/工具程序
+
+- bash,[binutils](https://www.gnu.org/software/binutils/), apt, ip, ssh, vim, tmux, jdk, python, ...
+  - 这些工具的原理不复杂 (例如 apt 是 dpkg 的套壳)，但琐碎
+  - [Ubuntu Packages](https://packages.ubuntu.com/) (和 apt-file 工具) 支持文件名检索
+
+其他各种应用程序
+
+- Vscode, 浏览器、音乐播放器……
+
+### 打开程序的执行：Trace (追踪)
+
+`strace`：System call trace，可以观测状态机的执行过程
+
+- 理解 strace 的输出并在你自己的操作系统里实现相当一部分系统调用 (mmap, execve, ...)
+- Demo: 试一试最小的 Hello World（`strace -f gcc hello.c`）
+
+### 操作系统中 “任何程序” 的一生
+
+> 任何程序 = minimal.S = 调用 syscall 的状态机
+
+- 被操作系统加载
+  - 通过另一个进程执行 execve 设置为初始状态
+- 状态机执行
+  - 进程管理：fork, execve, exit, ...
+  - 文件/设备管理：open, close, read, write, ...
+  - 存储管理：mmap, brk, ...
+- 调用 _exit (exit_group) 退出
+
+(初学者对这一点会感到有一点惊讶)
+
+- 说好的浏览器、游戏、杀毒软件、病毒呢？都是这些 API 吗？
+- <font color="red">我们有 strace，就可以自己做实验了！</font>
+
+### 动手实验：观察程序的执行
+
+工具程序代表：编译器 (gcc)
+
+- 主要的系统调用：`execve, read, write`
+- `strace -f gcc a.c`(gcc 会启动其他进程)
+  - 可以管道给编辑器 `vim -`
+  - 编辑器里还可以 `%!grep` (细节/技巧)
+
+图形界面程序代表：编辑器 (xedit)
+
+- 主要的系统调用：`poll, recvmsg, writev`
+- `strace xedit`
+  - 图形界面程序和 X-Window 服务器按照 X11 协议通信
+  - 虚拟机中的 xedit 将 X11 命令通过 ssh (X11 forwarding) 转发到 Host
+
+### 各式各样的应用程序
+
+都在<font color="red">操作系统 API (syscall) </font>.和<font color="red">操作系统中的对象上</font>构建
+
+- 窗口管理器
+  - 管理设备和屏幕 (read/write/mmap)
+  - 进程间通信 (send, recv)
+
+- 任务管理器
+  - 访问操作系统提供的进程对象 (readdir/read)
+  - 参考 gdb 里的 `info proc *`
+
+- 杀毒软件
+  - 文件静态扫描 (read)
+  - 主动防御 (ptrace)
+  - 其他更复杂的安全机制……
+
+## 总结
+
+无论是汇编代码还是高级语言程序，它们都可以表示成状态机：
+
+- 高级语言代码 .c
+  - 状态：栈、全局变量；状态迁移：语句执行
+- 汇编指令序列 .s
+  - 状态：$(M,R)$；状态迁移：指令执行
+- 编译器实现了两种状态机之间的翻译
+
+应用程序与操作系统沟通的唯一桥梁是系统调用指令 (例如 x86-64 的 syscall)。
+
+- 理解操作系统的重要工具：gcc, binutils, gdb, strace
+
+## 课后习题/编程作业
+
+### 1. 阅读材料
+
+- 浏览 [GNU Coreutils](https://www.gnu.org/software/coreutils/) 和 [GNU Binutils](https://www.gnu.org/software/binutils/) 的网站，建立 “手边有哪些可用的命令行工具” 的一些印象。
+- 浏览 [gdb](https://sourceware.org/gdb/current/onlinedocs/gdb.html/) 文档的目录，找到你感兴趣的章节了解，例如——“Reverse Execution”、“TUI: GDB Text User Interface”……
+- 对于你有兴趣的命令行工具，可以参考 [busybox](https://www.busybox.net/) 和 [toybox](https://landley.net/toybox/about.html) 项目中与之对应的简化实现。Toybox 现在已经成为了 Android 自带的命令行工具集。
+
+### 2. 编程实践
+
+在你的 Linux 中运行课堂上的代码示例，包括：
+
+- 编译链接最小二进制文件，并使用 strace 查看执行的系统调用序列。
+  - 汇编写的minimal 其系统调用很少（execve, write, exit）；
+- 尝试将非递归汉诺塔扩展到 f 和 g 两个函数互相调用的情况。
+- 使用 strace 查看更多程序的系统调用序列，并在好奇心的驱使下了解一部分系统调用的作用。可以借助互联网、Stackoverflow 或是 ChatGPT (但在使用时，要小心求证结果)。
