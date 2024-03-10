@@ -12,23 +12,27 @@
 > - [OSTEP] Remzi H. Arpaci-Dusseau and Andrea C. Arpaci-Dusseau. *[Operating Systems: Three Easy Pieces](http://pages.cs.wisc.edu/~remzi/OSTEP/)*. Arpaci-Dusseau Books, 2018.
 > - [CSAPP] Randal E. Bryant and David R. O'Hallaron. *Computer Systems: A Programmer's Perspective* (3ed). Pearson, 2017. (作为手册和参考书查阅)
 >
-> 随堂和实验代码：[OS_LAB_CODE](https://gitee.com/oscsc/oslabcode)
+> 
 
 
+
+## 课程大纲
 
 1.  [操作系统概述](./01-os_introduction.md)
-    - [官方视频](https://www.bilibili.com/video/BV1Xx4y1V7JZ/)
 2.  [应用视角的操作系统](./02-os_appview.md)
-    - [随堂代码](https://gitee.com/oscsc/oslabcode/tree/master/ch02-os_app_view)
 3.  [硬件视角的操作系统](03-os_hardware_view.md)
-    - [随堂代码](https://gitee.com/oscsc/oslabcode/tree/master/ch03-os_hardware_view)
 4.  [操作系统模型](04-os_python_modeling.md)
-    - [随堂代码](https://gitee.com/oscsc/oslabcode/tree/master/ch04-os_python_modeling)
 
 
 
 20. [C标准库和实现](./20-c_standard_lib.md)
 21. [可执行文件与加载](./21-22-executable_files_loading.md)
+
+
+
+## 随堂/实验代码
+
+随堂和实验代码：[OS_LAB_CODE](https://gitee.com/oscsc/oslabcode)
 
 
 
