@@ -61,13 +61,14 @@ nav:
     - 标签: tags.md
   - 书籍:
     - 数据密集型系统设计: 
-      - data_intensive_system_book/README.md
-      - data_intensive_system_book/1_data_system_basic.md
-      - data_intensive_system_book/2_data_model_query_language.md
-      - data_intensive_system_book/3_data_store_and_search.md
-      - data_intensive_system_book/4_encoding_and_evolution.md
-      - data_intensive_system_book/5_replication.md
-      - data_intensive_system_book/6_partitions.md
+      - books/data_intensive_system_book/README.md
+      - books/data_intensive_system_book/1_data_system_basic.md
+      - books/data_intensive_system_book/2_data_model_query_language.md
+      - books/data_intensive_system_book/3_data_store_and_search.md
+      - books/data_intensive_system_book/4_encoding_and_evolution.md
+      - books/data_intensive_system_book/5_replication.md
+      - books/data_intensive_system_book/6_partitions.md
+      - books/data_intensive_system_book/7_transaction.md
   - 算法谜题:
     - algorithmic_puzzles/README.md
   - 课程:
