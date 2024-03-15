@@ -2,7 +2,11 @@
 
 > 在中断或是 trap 指令后，通常由一段汇编代码将当前状态机 (执行流) 的寄存器保存到内存中，完成状态的 “封存”。
 
+**本讲内容**：一个 Python “操作系统玩具” 的设计与实现，帮助大家在更高的 “抽象层次” 上理解操作系统的行为。这个 “玩具” 将贯穿整个课程
+
 ## 理解操作系统的新途径
+
+### 回顾：程序/硬件的状态机模型
 
 计算机软件
 
@@ -16,27 +20,44 @@
   - 从 CPU Reset 状态开始执行 Firmware 代码
   - 操作系统 = C 程序
 
+### 画状态机
+
 状态和状态的迁移是可以 “画” 出来的！
 
 - 理论上说，只需要两个 API
   - `dump_state()` - 获取当前程序状态
   - `single_step()` - 执行一步
 
- 概念
+GDB 可以做这事，但检查状态有缺陷，主要是太复杂：
 
-- 应用程序 (高级语言状态机)
-- 系统调用 (操作系统 API)
-- 操作系统内部实现
+- 状态太多（指令数很多）
+- 状态太大（很多库函数状态）
 
-通常的思路：真实的操作系统 + QEMU/NEMU 模拟器
+简化：<font color='red'>把复杂的东西分解成简单的东西 </font>
 
-- 我们的思路
-  - 应用程序 = 纯粹计算的 Python 代码 + 系统调用
-  - 操作系统 = Python 系统调用实现，有 “假想” 的 I/O 设备
+- `strace`：只关注系统调用
+
+重要的概念
+
+- 应用程序 (高级语言状态机) + 系统调用 (操作系统 API) + 操作系统内部实现
+
+通常的实现思路：真实的操作系统 + QEMU/NEMU 模拟器
+
+我们的思路
+- 应用程序 = 纯粹计算的 Python 代码 + 系统调用
+
+- 操作系统 = Python 系统调用实现，有 “假想” 的 I/O 设备
+
+  ```python
+  def main():
+      sys_write('Hello, OS World')
+  ```
+
+
 
 ## 操作系统 “玩具”：设计与实现
 
-### API
+### 操作系统玩具：API
 
 四个 “系统调用” API
 
@@ -49,12 +70,48 @@
 
 - 允许使用 list, dict 等数据结构
 
+### 操作系统玩具：应用程序
+
+操作系统玩具：<font color='red'>我们可以动手把状态机画出来！</font>
+
+```python
+count = 0
+
+def Tprint(name):
+    global count
+    for i in range(3):
+        count += 1
+        sys_write(f'#{count:02} Hello from {name}{i+1}\n')
+        sys_sched()
+
+def main():
+    n = sys_choose([3, 4, 5])
+    sys_write(f'#Thread = {n}\n')
+    for name in 'ABCDE'[:n]:
+        sys_spawn(Tprint, name)
+    sys_sched()
+```
+
+### 实现系统调用
+
+> 随堂代码：os-model.py
+>
+> - 不支持 `sys_*`的系统调用的返回值；
+
+有些 “系统调用” 的实现是显而易见的
+
+```python
+def sys_write(s): print(s)
+def sys_choose(xs): return random.choice(xs)
+def sys_spawn(t): runnables.append(t)
+```
+
 **sys_sched()** 的难点：
 
 - 封存当前状态机的状态
 - 恢复另一个 “被封存” 状态机的执行
 
-Python 语言机制：**Generator objects**
+Python 语言机制：**Generator objects (无栈协程/轻量级线程/...)**
 
 ```python
 def numbers():
@@ -70,9 +127,11 @@ def numbers():
 
 ```python
 n = numbers()  # 封存状态机初始状态
-n.send(None)   # 恢复封存的状态，开始时只能发送 None，输出 ‘0’
-n.send(0)      # 恢复封存的状态 (并传入返回值)，
+n.send(None)   # 恢复封存的状态(或者 next(gen))，开始时只能发送 None，输出 ‘0’
+n.send(0)      # 恢复封存的状态 (并传入返回值，用于赋值给 ret)
 ```
+
+如果`send()`没有产生下一个值，则抛出 `StopIteration`；
 
 
 
@@ -80,17 +139,17 @@ n.send(0)      # 恢复封存的状态 (并传入返回值)，
 
 进程 + 线程 + 终端 + 存储 (崩溃一致性)
 
-| 系统调用/Linux 对应          | 行为                            |
-| :--------------------------- | :------------------------------ |
-| sys_spawn(fn)/pthread_create | 创建从 fn 开始执行的线程        |
-| sys_fork()/fork              | 创建当前状态机的完整复制        |
-| sys_sched()/定时被动调用     | 切换到随机的线程/进程执行       |
-| sys_choose(xs)/rand          | 返回一个 xs 中的随机的选择      |
-| sys_write(s)/printf          | 向调试终端输出字符串 s          |
-| sys_bread(k)/read            | 读取虚拟设磁盘块 �*k* 的数据    |
-| sys_bwrite(k, v)/write       | 向虚拟磁盘块 �*k* 写入数据 �*v* |
-| sys_sync()/sync              | 将所有向虚拟磁盘的数据写入落盘  |
-| sys_crash()/长按电源按键     | 模拟系统崩溃                    |
+| 系统调用/Linux 对应          | 行为                           |
+| :--------------------------- | :----------------------------- |
+| sys_spawn(fn)/pthread_create | 创建从 fn 开始执行的线程       |
+| sys_fork()/fork              | 创建当前状态机的完整复制       |
+| sys_sched()/定时被动调用     | 切换到随机的线程/进程执行      |
+| sys_choose(xs)/rand          | 返回一个 xs 中的随机的选择     |
+| sys_write(s)/printf          | 向调试终端输出字符串 s         |
+| sys_bread(k)/read            | 读取虚拟设磁盘块 *k 的数据     |
+| sys_bwrite(k, v)/write       | 向虚拟磁盘块 *k* 写入数据 *v*  |
+| sys_sync()/sync              | 将所有向虚拟磁盘的数据写入落盘 |
+| sys_crash()/长按电源按键     | 模拟系统崩溃                   |
 
 **模型的简化**
 
