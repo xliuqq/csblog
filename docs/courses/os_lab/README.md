@@ -18,21 +18,37 @@
 
 ## 课程大纲
 
+> 随堂（课件中的）代码：[OS_LAB_CODE](https://gitee.com/oscsc/oslabcode)
+>
+> MiniLab 和 OSLab 应[要求](https://jyywiki.cn/OS/2023/labs/Labs.html)，不进行开源。
+
 1.  [操作系统概述](./01-os_introduction.md)
 2.  [应用视角的操作系统](./02-os_appview.md)
 3.  [硬件视角的操作系统](03-os_hardware_view.md)
 4.  [操作系统模型](04-os_python_modeling.md)
+
+[M1: 打印进程树 (pstree)](./M1_print_the_process_tree.md)
+
+L0: 为计算机硬件编程 
 
 
 
 20. [C标准库和实现](./20-c_standard_lib.md)
 21. [可执行文件与加载](./21-22-executable_files_loading.md)
 
+#### 
 
 
-## 随堂/实验代码
 
-随堂和实验代码：[OS_LAB_CODE](https://gitee.com/oscsc/oslabcode)
+
+
+## 课后实验
+
+> 
+
+M1：打印进程树
+
+
 
 
 

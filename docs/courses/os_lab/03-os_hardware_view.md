@@ -237,9 +237,3 @@ int main() {
 - (MPE) `cpu_count`/`cpu_current`/`atomic_xchg` - 多处理器
 
 
-
-[M1: 打印进程树 (pstree)](https://jyywiki.cn/OS/2023/labs/M1)
-
-
-
-[L0: 为计算机硬件编程 ](https://jyywiki.cn/OS/2023/labs/L0)
