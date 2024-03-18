@@ -22,3 +22,6 @@ tags:
 **[II 分布式数据](./part2_distributed_data.md)**
 
 - 第五章：[复制](./5_replication.md)
+- 第六章：[分区](./6_partitions.md)
+- 第七章：[事务](7_transaction.md)
+- 
