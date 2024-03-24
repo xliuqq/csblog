@@ -272,5 +272,5 @@ x86 已经是市面上能买到的 “最强” 的内存模型了
 ## 编程作业
 
 - 在你的 Linux 中运行课堂上的代码示例；
-- thread.h 可以学习的编程技巧，例如 ctor 和 dtor 等；
+- thread.h 可以学习的编程技巧，例如 constructor 和 destructor 等；
 
