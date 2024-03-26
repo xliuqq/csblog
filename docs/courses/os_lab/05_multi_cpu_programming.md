@@ -48,7 +48,7 @@ int main() {
 
 问题1：Ta 和 Tb 真的共享内存么？
 
-- 证明：全局变量，两个线程都可以对其操作；
+- 证明：定义全局变量，两个线程都可以对其操作；
 
 问题2：如何证明线程具有独立的堆栈（以及确定的堆栈的大小范围？）
 
@@ -261,11 +261,11 @@ x86 已经是市面上能买到的 “最强” 的内存模型了
 
 教科书 Operating Systems: Three Easy Pieces:
 
-- 第 25 章 - Dialogue on Concurrency
+- [第 25 章 - Dialogue on Concurrency](./book_os_three_pieces/25-dialogue-concurrency.pdf)
 
-- 第 26 章 - Concurrency and Threads
+- [第 26 章 - Concurrency and Threads](./book_os_three_pieces/26-threads-intro.pdf)
 
-- 第 27 章 - Thread API
+- [第 27 章 - Thread API](./book_os_three_pieces/27-threads-api.pdf)
 
 
 

@@ -9,6 +9,8 @@
 
 ### The C Standard Library
 
+> [The GNU C Library - GNU Project - Free Software Foundation](https://www.gnu.org/software/libc/)
+
 被很好地标准化
 
 - ISO IEC 标准的一部分
