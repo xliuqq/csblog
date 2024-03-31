@@ -76,6 +76,13 @@ nav:
       - 0.整体大纲: courses/os_lab/README.md
       - 1.操作系统概述: courses/os_lab/01-os_introduction.md
       - 2.应用视角的操作系统: courses/os_lab/02-os_appview.md
+      - 3.硬件视角的操作系统: courses/os_lab/03-os_hardware_view.md
+      - 4.Python 建模操作系统: courses/os_lab/04-os_python_modeling.md
+      - 5.多处理器编程：从入门到放弃: courses/os_lab/05_multi_cpu_programming.md
+      - 6.应用视角的操作系统: courses/os_lab/06_concurrent_control_basic.md
+      - 7.并发控制：互斥: courses/os_lab/07_concurrent_control_mutex.md
+      - 8.调试理论与实践: courses/os_lab/08_debug_and_action.md
+      - 9.并发控制：同步（1）: courses/os_lab/09_sync_condition.md
   - 论文:
     - go并发bugs: paper/go_concurrency_bugs.md
     - HPC中的作业调度: paper/job_scheduling_in_hpc.md
