@@ -82,7 +82,9 @@ nav:
       - 6.应用视角的操作系统: courses/os_lab/06_concurrent_control_basic.md
       - 7.并发控制：互斥: courses/os_lab/07_concurrent_control_mutex.md
       - 8.调试理论与实践: courses/os_lab/08_debug_and_action.md
-      - 9.并发控制：同步（1）: courses/os_lab/09_sync_condition.md
+      - 9.并发控制：同步（条件变量）: courses/os_lab/09_sync_condition.md
+      - 10.并发控制：同步（信号量）: courses/os_lab/10_sync_semphore.md
+      - 11.真实世界的并发编程: courses/os_lab/11_concurrent_in_real_world.md
   - 论文:
     - go并发bugs: paper/go_concurrency_bugs.md
     - HPC中的作业调度: paper/job_scheduling_in_hpc.md
