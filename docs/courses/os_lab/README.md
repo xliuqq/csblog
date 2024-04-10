@@ -44,11 +44,19 @@ L0: 为计算机硬件编程
 
 ## 课后实验
 
-> 
+Mini Lab
 
-M1：打印进程树
+- [M1：打印进程树](M1_print_the_process_tree.md)
+- [M2：最长公共子序列的并行化](./M2_plcs.md)
+- [M3：系统调用 Profiler](M3_sperf.md)
 
+- [M4：C语言的REPL](./M4_crepl.md)
+- [M5：文件修复](./M5_filerecovery.md)
 
+OS Lab
+
+- [L0]()
+- 
 
 
 

@@ -139,7 +139,7 @@ Lockdep 规约 (Specification)
 - 同步函数调用
 - Happens-before: program order 和 release acquire 的传递闭包
 
-对于发生在不同线程且至少有一个是写的 *x*,*y* 检查（图论的可达性检查）
+对于发生在不同线程且至少有一个是写的 *x*,*y* 检查（**图论的可达性检查**）
 
 ​																$x≺y∨y≺x$
 

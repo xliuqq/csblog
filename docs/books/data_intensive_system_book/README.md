@@ -5,7 +5,9 @@ tags:
 
 # 数据密集型系统设计
 
-> [Data Intensive Application System Design](https://www.alipan.com/s/2yoAdUwdtJ6)
+> [PDF-English: Data Intensive Application System Design](https://www.alipan.com/s/2yoAdUwdtJ6)
+>
+> [参考的中文翻译 Vonng/ddia ](https://github.com/Vonng/ddia)
 
 
 
@@ -24,4 +26,5 @@ tags:
 - 第五章：[复制](./5_replication.md)
 - 第六章：[分区](./6_partitions.md)
 - 第七章：[事务](7_transaction.md)
-- 
+- 第八章：[分布式系统的麻烦](./8_trouble_in_distributed_system.md)
+
