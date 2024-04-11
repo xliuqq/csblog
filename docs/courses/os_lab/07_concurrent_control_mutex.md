@@ -242,6 +242,27 @@ POSIX 线程库中的互斥锁 (`pthread_mutex`)
 - gdb 调试
   - `set scheduler-locking on`, `info threads`, `thread X`
 
+### 附：Lock 指令的现代实现
+
+在 **L1 cache 层保持一致性** (ring/mesh bus)
+
+- 相当于每个 cache line 有分别的锁
+- `store(x)` 进入 **L1 缓存即保证对其他处理器可见**
+  - 但要小心 **store buffer** 和**乱序执行**
+
+L1 cache line 根据状态进行协调
+
+- **M (Modified)**， 脏值
+- **E (Exclusive)**，独占访问
+- **S (Shared)**，只读共享
+- **I (Invalid)**，不拥有 cache line
+
+**Load-Reserved/Store-Conditional (LR/SC)**：RISC-V， 另一种原子操作的设计
+
+- LR: 在内存上标记 reserved (盯上你了)，中断、其他处理器写入都会导致标记消除；
+- SC: 如果 “盯上” 未被解除，则写入。
+- 硬件实现：[BOOM (Berkeley Out-of-Order Processor)](https://github.com/riscv-boom/riscv-boom/blob/v3.0.0/src/main/scala/lsu/dcache.scala)
+
 ## 课后习题
 
 #### 1. 阅读材料

@@ -197,6 +197,8 @@ Trick: 死锁会在 5 个哲学家 “同时吃饭” 时发生 ---- 破坏死�
 
 ### 反思：分布与集中
 
+> 分布式系统中非常常见的解决思路 (HDFS, Yarn, K8s)
+
 “Leader/follower” - 有一个集中的 “总控”，而非 “各自协调”
 
 - 在**可靠的消息机制上实现任务分派**
@@ -225,8 +227,9 @@ void Twaiter() {
 <font color='red'>抛开 workload 谈优化就是耍流氓</font>
 
 - 吃饭的时间通常远远大于请求服务员的时间
-- 如果一个 manager 搞不定，可以分多个 (fast/slow path)
-  - 把系统设计好，集中管理可以不是瓶颈：[The Google File System](https://pdos.csail.mit.edu/6.824/papers/gfs.pdf) (SOSP'03) 开启大数据时代
+- 如果一个 manager 搞不定，可以分多个 (fast/slow path)：把系统设计好，集中管理可以不是瓶颈
+  - [Millions of tiny databases](https://assets.amazon.science/c4/11/de2606884b63bf4d95190a3c2390/millions-of-tiny-databases.pdf) (NSDI'20)
+  - [The Google File System](https://pdos.csail.mit.edu/6.824/papers/gfs.pdf) (SOSP'03) 开启大数据时代
 
 ![img](pics/google-fs.png)
 
