@@ -39,6 +39,9 @@ Shell: Kernel 的 “外壳”
 - 顺序结构: `cmd1; cmd2`, `cmd1 && cmd2`, `cmd1 || cmd2`
 - 管道: `cmd1 | cmd2`
 - 预处理: `$()`, `<()`
+  - `$(ls | grep 'A')`
+  - `vim <(ls)`：将 ls 的内容，作为 vim 的文件输入
+
 - 变量/环境变量、控制流……
 
 Job control：类比窗口管理器里的 “叉”、“最小化”
@@ -68,7 +71,7 @@ Shell 是 Kernel 之外的 “壳”
 - 零库函数依赖 (`-ffreestanding` 编译、ld 链接)
 - 可以作为最小 Linux 的 init 程序
 
-支持的功能
+支持的功能（命令需要绝对路径）
 
 - 重定向/管道 `ls > a.txt`, `ls | wc -l`
 - 后台执行 `ls &`
@@ -105,7 +108,7 @@ gdb
   - `ls > a.txt | cat`
     - 我已经重定向给 a.txt 了，cat 是不是就收不到输入了？
 
-  - bash/zsh 的行为是不同的
+  - `bash/zsh` 的行为是不同的
     - 所以脚本一般都是 `#!/bin/bash` 甚至 `#!/bin/sh` 保持兼容
 
 ### 另一个有趣的例子

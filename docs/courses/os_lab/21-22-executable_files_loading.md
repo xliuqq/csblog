@@ -1,12 +1,11 @@
 # 可执行文件与加载
 
-> **背景回顾**：我们已经见识过在系统调用 API 和操作系统系统对象上层层封装得到的世界了。是时候实现一些 “真正” 的程序了——让我们看一看到底什么是**可执行文件**，以及它们是**如何被操作系统加载**的。
+**本讲内容**：
 
-
+- 可执行文件
+- 静态/动态链接和加载
 
 ## 可执行文件
-
-
 
 ### 什么是可执行文件
 
@@ -44,7 +43,7 @@
 
 > 实验代码：通过 ChatGPT4 进行代码生成
 
-最小可执行文件
+最小可执行文件（汇编实现的`HelloWorld`，`.text`段很简单）
 
 - 代码在内存中
 - PC 指向第一条指令
@@ -52,8 +51,7 @@
 
 直接把代码 `mmap` 到内存
 
-- 然后跳转过去即可
-- (你可以想象 execve 里就做了这件事)
+- 然后跳转过去即可 (你可以想象 execve 里就做了这件事)
 
 
 
@@ -61,19 +59,17 @@
 
 ### 在操作系统上实现 ELF Loader
 
-加载器 (loader) 的职责
+加载器 (loader) 的职责（静态链接，所有的内容都在二进制文件里）
 
 - 解析数据结构
 - 创建进程初始状态
   - argv, envp, ...
   - 再一次，[System V ABI](https://jyywiki.cn/pages/OS/manuals/sysv-abi.pdf)
-- 跳转执行
+- **跳转执行**
 
-代码示例
+代码示例：打印 environ 的二进制代码
 
-- 能正确处理参数/环境变量 [env.c](https://jyywiki.cn/pages/OS/2023/v/env.c)
-
-
+- 能正确处理参数/环境变量 env.c
 
 ### Boot Block Loader
 
@@ -86,7 +82,7 @@
 
 - 做得事情与静态加载器完全一样
 - 没有 mmap 怎么办？
-  - 用 I/O 指令把数据从磁盘搬到内存
+  - 用 I/O 指令把数据从磁盘搬到内存，读成自己序列，然后指针赋值（如何可执行？`mprotect`）；
 
 ### ELF 文件是如何生成的？
 
@@ -96,9 +92,36 @@
 
 **绝大部分指令都是编译时就完全确定**
 
+```c
+int bar();
+
+int foo() {
+
+        return bar() + 1;
+}
+// gcc -c test.c
+// objdump -d test.o
+Disassembly of section .text:
+
+0000000000000000 <foo>:
+   0:   55                      push   %rbp
+   1:   48 89 e5                mov    %rsp,%rbp
+   4:   b8 00 00 00 00          mov    $0x0,%eax
+   9:   e8 00 00 00 00          callq  e <foo+0xe>
+   e:   83 c0 01                add    $0x1,%eax
+  11:   5d                      pop    %rbp
+  12:   c3                      retq   
+      
+// readelf -a test.o
+Relocation section '.rela.text' at offset 0x1c0 contains 1 entry:
+  Offset          Info           Type           Sym. Value    Sym. Name + Addend
+00000000000a  000900000004 R_X86_64_PLT32    0000000000000000 bar - 4
+```
+
 - 但有少部分不能，例如 printf 的地址 (引用第三方)
   - call 会编译成 `e8 00 00 00`
     - 复习题：`offset 0` 是跳转到哪条指令，为什么？
+    - 下一条指令的开始（即本条指令的末尾），而不是本条指令的开始。（指令可以加前缀）
   - 连接时需要 relocate
     - 这也是 ELF “数据结构” 的一部分
     - 你可以理解成 “`ADDR_OF(puts) + 4`” 这种运算规则
@@ -114,28 +137,33 @@
 - 大量的 “指针” (人类无法阅读的偏移量)
 - 等于直接让你去读一个内存数据结构的 core dump
 
+一个机会重新设计？
+
+- 可以做个 JSON-based，可读的格式
+  - FLE: A Fast, Legible, and Expedient Binary Format
+
 
 
 ## 动态链接和加载
 
 ### ”拆解应用程序“的需求
 
-实现**运行库和应用代码分离**
+实现<font color='red'>**运行库和应用代码分离**</font>
 
-- Linux 中绝大部分应用都是动态链接的
-  - 系统中只有一份 libc （节省磁盘）
-- Library 保持接口的向后兼容
-  - **补丁发布**后不再需要**重编译所有依赖**的应用
-  - [Semantic Versioning](https://semver.org/)：版本号规范（Major.Minor.Fix）
-    - “Compatible” 是个有些微妙的定义
+- Linux 中绝大部分应用都是动态链接的：系统中只有一份 libc （节省磁盘）
+- Library 保持接口的向后兼容：**补丁发布**后不再需要**重编译所有依赖**的应用
+  - [Semantic Versioning](https://semver.org/)：版本号规范（Major.Minor.Fix）：“Compatible” 是个有些微妙的定义
 
-大型项目内部也可以内部分解
+大型项目内部也可以内部分解：编译一部分，<font color='red'>**不用重新链接**</font>
 
-- 编译一部分，不用重新链接
-- libjvm.so, libart.so, ...
+- `libjvm.so, libart.so, ...`
   - NEMU: “把 CPU 插上主板”
 
 ### 动态链接：今天不讲 ELF
+
+> 每句话都没说错，但没人能跟上
+>
+> - 根本原因：概念上紧密相关的东西在实现中被 “拆散” 了
 
 换一种方法
 
@@ -144,9 +172,9 @@
   - 再去考虑怎么改进它，你就得到了 ELF！
 - **<font color=red>假设编译器可以为你生成位置无关代码 (PIC)</font>**
 
-### 设计一个新的二进制文件格式
+### 设计一个新的二进制文件格式（dl）
 
->动态链接的符号查表就行了嘛。
+><font color='red'>**动态链接的符号查表**</font>就行了嘛。
 
 ```ini
 DL_HEAD
@@ -165,28 +193,47 @@ hello:
 DL_END
 ```
 
+编译器：`GCC, GNU as`
+
+`binutils`
+
+- `ld = objcopy` (偷来的)
+
+- `as = GNU as` (偷来的)
+
+- 剩下的就需要自己动手了
+
+  - `readdl (readelf)`
+  - `objdump`
+  - 你同样可以山寨 `addr2line, nm, objcopy, ...`
+
+  - 和最重要的<font color='red'>**加载器**</font>
+
+### 解决 dl 文件的缺陷
+
+#### 功能缺陷
+
 存储保护和加载位置
 
-- 允许将 .dl 中的一部分以某个指定的权限映射到内存的某个位置 (program header table)
+- 允许将 `.dl` 中的一部分以<font color='red'>**某个指定的权限映射**</font>到内存的某个位置 (program header table)
 
 允许自由指定加载器 (而不是 dlbox)
 
-- 加入 INTERP
+- 加入 `INTERP`
 
 空间浪费
 
-- 字符串存储在常量池，统一通过 “指针” 访问
-  - 这是带来 ELF 文件难读的最根本原因
+- 字符串存储在常量池，统一通过 “指针” 访问：这是带来 ELF 文件难读的最根本原因
 
 其他：不那么重要
 
 - 按需 RTFM/RTFSC
 
-
-
 ```c
 #define DSYM(sym)   *sym(%rip)
 ```
+
+#### 性能缺陷
 
 DSYM 是间接内存访问
 
@@ -197,10 +244,8 @@ foo();
 
 一种写法，两种情况
 
-- 来自其他编译单元 (静态链接)
-  - 直接 PC 相对跳转即可
-- 动态链接库
-  - 必须查表 (编译时不能决定)
+- 来自其他编译单元 (静态链接)：直接 PC 相对跳转即可
+- 动态链接库：必须查表 (编译时不能决定)
 
 
 

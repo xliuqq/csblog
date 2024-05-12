@@ -2,10 +2,17 @@
 
 > 在系统调用和语言机制的基础上，libc 为我们提供了开发跨平台应用程序的 “第一级抽象”。在此基础上构建起了万千世界：C++ (扩充了 C 标准库)、Java、浏览器世界……今天，C 语言在应用开发方面有很多缺陷，但仍然为 “第一级抽象” 提供了一个有趣的范本：
 >
-> - [C is not a low-level language](https://dl.acm.org/doi/pdf/10.1145/3209212)
-> - [C isn't a programming language any more](./pdfs/C Is Not a Low Level Language.pdf)
+> - [C is not a low-level language](./pdfs/C Is Not a Low Level Language.pdf)
+> - [C isn't a programming language any more](https://faultlore.com/blah/c-isnt-a-language/)
 
 ## libc简介
+
+世界上 “最通用” 的高级语言库函数
+
+- C 是一种 “高级汇编语言”
+  - 作为对比，C++ 更好用，但也更难移植
+- 屏蔽了底层体系结构细节
+  - 管理数据、请求操作系统……
 
 ### The C Standard Library
 
@@ -26,7 +33,8 @@ C 是 “高级汇编”，一定有为嵌入式设备实现的**嵌入式的 li
 
 AskGPT: *How to compile a C program using musl as libc instead of glibc* ?
 
-- musl-gcc
+- `musl-gcc`
+- 试一试：从第一条指令开始调试一个 C 程序
 
 
 
@@ -34,20 +42,43 @@ AskGPT: *How to compile a C program using musl as libc instead of glibc* ?
 
 ### 基础数据的体系结构无关抽象
 
-***Freestanding 环境***下也可以使用的定义
+[Freestanding 环境](https://en.cppreference.com/w/cpp/freestanding)下也可以使用的定义
 
 - stddef.h, stdint.h, stdbool.h, float.h, limits.h, stdarg.h（变长参数）, inttype.h, math.h, setjmp.h
+- 具体的API 见 [clibrary/](https://cplusplus.com/reference/clibrary/)
 
 ### 字符串和数组操作
 
-string.h：字符串/数组操作
+[string.h](https://www.cplusplus.com/reference/cstring/)：字符串/数组操作
 
-- 标准库**只对“标准库内部数据的”的线程安全性负责**，例如 printf 的 buffer；
+- <font color='red'>**标准库只对“标准库内部数据的”的线程安全性负责**</font>，例如 `printf` 的 buffer；
 - 可以通过阅读源码/采用实验的形式验证
-  - 例如对 memset 采用多线程，可以验证其线程不安全；
+  - 例如对 **memset 采用多线程**，可以验证其线程不安全；
 
+libc 不得不在兼容性、性能等之间达到权衡
 
-更多的代码阅读：stdlib.h, math.h, setjmp.h
+- 多线程共享的 API (例如文件操作、malloc/free 等) 需要上锁
+- `memset/memcpy` 这类性能敏感的函数，则把消除数据竞争的任务交给了开发者
+
+### 排序和查找
+
+低情商 (低配置) API：C
+
+```c
+void qsort(void *base, size_t nmemb, size_t size,
+           int (*compar)(const void *, const void *));
+
+void *bsearch(const void *key, const void *base,
+              size_t nmemb, size_t size,
+              int (*compar)(const void *, const void *));
+```
+
+高情商 API：C++
+
+```c
+sort(xs.begin(), xs.end(), [] (auto& a, auto& b) {...});
+xs.sort(lambda key=...)
+```
 
 
 
@@ -59,13 +90,75 @@ FILE * 背后是个文件描述符，用 gdb 查看具体的 `FILE *`
 
 - 封装了文件描述符上的系统调用 (fseek, fgetpos, ftell, feof, ...)
 
-popen 和 pclose：pipe stream to or from a process.
+vprintf 系列
 
-perror: print the system error
+- 使用了 `stdarg.h` 的参数列表
 
-errno: number of last error，线程安全（thread_local）；
+```c
+int vfprintf(FILE *stream, const char *format, va_list ap);
+int vasprintf(char **ret, const char *format, va_list ap);
+```
 
-环境变量 `extern char **environ`的思考：通过对 musl 的 debug
+### popen 和 pclose
+
+> FILE *popen(const char *command, const char *mode);
+
+我们在游戏修改器中使用了它：但其是一个设计有缺陷的 API
+
+- Since a pipe is by definition unidirectional, <font color='red'>**the type argument may specify only reading or writing**, **not both**</font>; the resulting stream is correspondingly read-only or write-only.
+
+高情商 API (现代编程语言)
+
+```python
+subprocess.check_output(['cat'],
+  input=b'Hello World', stderr=subprocess.STDOUT)
+```
+
+```rust
+let dir_checksum = {
+  Exec::shell("find . -type f")
+    | Exec::cmd("sort") | Exec::cmd("sha1sum")
+}.capture()?.stdout_str();
+```
+
+### err, error, perror
+
+所有 API 都可能失败：
+
+```shell
+$ gcc nonexist.c
+gcc: error: nonexist.c: No such file or directory
+```
+
+`man perror`,
+
+```c
+// perror首先会打印出message，紧接着打印一个冒号“：”和一个空格。最后打印当前errno代表的出错原因信息
+void perror( char const *message );
+```
+
+`man 3 errno`：线程私有变量，类似`__thread`修饰
+
+- `errno`：number of last error，如 `EACESS`, `ENOENT`
+
+### environ 
+
+`environ`是谁进行赋值？
+
+- RTFM: [System V ABI](https://jyywiki.cn/pages/OS/manuals/sysv-abi.pdf)
+  - p33：Figure 3.9 Initial Process Stack
+- 操作系统：argc + argv + environ；
+
+```c
+int main() {
+  extern char **environ;
+  for (char **env = environ; *env; env++) {
+    printf("%s\n", *env);
+  }
+}
+```
+
+环境变量 `extern char **environ`的思考：通过对 `musl` 的 debug
 
 - 程序的第一条指令执行时，`environ`是没有进行赋值；
 - main 函数执行时，`environ`已经被赋值；
@@ -79,22 +172,22 @@ errno: number of last error，线程安全（thread_local）；
 
 ### 如何分配一大段内存
 
-- 用 MAP_ANONYMOUS 申请，想多少就有多少，超过物理内存上限都行
+- 用 `MAP_ANONYMOUS` 申请，想多少就有多少，超过物理内存上限都行
 
-反而，操作系统不支持分配一小段内存
+反而，操作系统<font color='red'>**不支持**</font>分配一小段内存
 
 - 这是应用程序自己的事情
 
 ### malloc 和 free
+
+> **多线程安全下的性能**
 
 在大区间 [*L*,*R*) 中维护互不相交的区间的集合 $M={[l_0,r_0), [l_1,r_1), ... [ln0,r_n)}$
 
 - $malloc(s)$：返回大小为 s 的区间
   - 必要时可以向操作系统申请额外的[*L*,*R*) (观察 strace)
   - 允许在内存不足时 “拒绝” 请求
-- $free(l,*r*)$：给定 $l$，删除 $[l,r) \in M$
-
-多线程安全下的性能
+- $free(l,r)$：给定 $l$，删除 $[l,r) \in M$
 
 ### 高效的 malloc/free
 
@@ -104,14 +197,14 @@ errno: number of last error，线程安全（thread_local）；
 
 paper：
 
-- Mimalloc: free list sharding in action
+- [2019-Mimalloc: free list sharding in action](https://www.microsoft.com/en-us/research/uploads/prod/2019/06/mimalloc-tr-v1.pdf)
 
 ### Workload 分析
 
 在实际系统中，我们通常不考虑 adversarial 的 worst case
 
 - 指导思想：<font color=red>*O*(*n*) 大小的对象分配后至少有 Ω(*n*) 的读写操作，否则就是 performance bug (不应该分配那么多)</font>
-  - 越小的对象创建/分配越频繁
+  - **越小的对象创建/分配越频繁**：优化的方向
     - 字符串、临时对象等；生存周期可长可短
   - 较为频繁地分配中等大小的对象
     - 较大的数组、复杂的对象；更长的生存周期
@@ -119,7 +212,7 @@ paper：
     - 巨大的容器、分配器；很长的生存周期
 - <font color=red>并行、并行、再并行</font>
   - 所有分配都会在所有处理器上发生
-  - 使用链表/区间树 (first fit) 可不是个好想法
+  - 使用链表/区间树 (first fit) 可不是个好想法：无法并行
 
 ### Fast and Slow
 
@@ -130,20 +223,19 @@ paper：
   - 但有小概率会失败 (fall back to slow path)
 - **Slow path**
   - 不在乎那么快
-  - 但把困难的事情做好
-    - 计算机系统里有很多这样的例子 (比如 cache)
+  - 但把困难的事情做好：计算机系统里有很多这样的例子 (比如 cache)
 
 人类也是这样的系统
 
-- Daniel Kahneman. *Thinking, Fast and Slow*. Farrar, Straus and Giroux, 2011.
+- Daniel Kahneman. [*Thinking, Fast and Slow*](https://book.douban.com/subject/6754574/). Farrar, Straus and Giroux, 2011.
 
 ### `malloc`: Fast Path 设计
 
-**使所有 CPU 都能并行地申请内存**
+#### 使所有 CPU 都能并行地申请内存
 
 - 线程都事先瓜分一些 “领地” (thread-local allocation buffer)
 - 默认从自己的领地里分配
-  - 除了在另一个 CPU 释放，acquire lock 几乎总是成功
+  - 除了在另一个 CPU 释放，`acquire lock` 几乎总是成功
 - 如果自己的领地不足，就从全局的池子里借一点
 
 不要在乎一点小的浪费
@@ -152,7 +244,7 @@ paper：
 
 
 
-**小内存：Segregated List**
+#### 小内存：Segregated List
 
 **分配**: Segregated List (Slab)
 
@@ -168,7 +260,9 @@ paper：
 - 直接归还到 slab 中
   - 注意这可能是另一个线程持有的 slab，需要 per-slab 锁 (小心数据竞争)
 
-**大内存：一把大锁保平安**
+
+
+#### 大内存：一把大锁保平安
 
 Buddy system (1963)
 
