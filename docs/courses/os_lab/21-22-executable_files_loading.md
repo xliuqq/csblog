@@ -4,6 +4,9 @@
 
 - 可执行文件
 - 静态/动态链接和加载
+- 动态链接与加载
+- ELF 的动态链接
+- `LD_PRELOAD` Hooking
 
 ## 可执行文件
 
@@ -255,18 +258,15 @@ foo();
 
 若干要素
 
-- 编译成位置无关代码
+- 编译成位置无关代码：这是编译器可以实现的
   - `lea (0x400000), addr_of_x` (no)
   - `lea 12(%rip), addr_of_x` (yes)
-  - 这是编译器可以实现的
 - 对外部库函数的调用是查表的
   - `call TABLE(x)`
 - 在运行 (加载) 时填表
   - 加载时把导出的符号填入 TABLE
 
-我们 “发明” 了 **GOT (Global Offset Table)**
-
-- 就是 TABLE
+我们 “发明” 了 **GOT (Global Offset Table)**：就是 TABLE
 
 ### 一个有趣的问题
 
@@ -276,16 +276,14 @@ extern void foo();
 
 编译器遇到函数调用，应该翻译成哪种指令？
 
-- 如果 foo 来自同一个动态链接库，不用查表
-  - `call foo`
-- 如果 foo 来自另一个动态链接库
-  - `call TABLE(foo)`
+- 如果 foo 来自同一个动态链接库，不用查表：`call foo`
+- 如果 foo 来自另一个动态链接库：`call TABLE(foo)`
 
 我们发明了 **PLT (Procedure Linkage Table)**：生成同样的 call 指令
 
 - 编译器总是生成一个直接的 call
   - 来自另一个动态链接库：**call putchar@PLT**
-  - 链接的时候增加间接跳转的只读代码
+  - <font color='red'>**链接的时候增加间接跳转的只读代码**</font>
 
 - 函数实在太多了
   - 每个都标记区分，太难看了
@@ -294,6 +292,100 @@ extern void foo();
 
 > 更好的”知识网络“，`ldd`等相关命令 -> ”状态机初始状态“ 可视化 
 
+### Executable Linkable Format
 
+ELF 和 “dl” 没有本质区别
 
-27min47s
+- 当然，有海量工程实践上的细节
+- 与 99.9% 的程序员无关
+
+“状态机初始状态” → 能够可视化
+
+- ldd - Print shared object dependencies
+
+  - SEE ALSO 一直是手册里的宝藏
+
+  - 指向了 ld.so (8)
+
+对于一个动态链接的二进制文件，execve 后的第一条指令在哪里？
+
+- `gdb`中 `starti`，`ld.so`中的`_start`；
+
+这种问题，再也不需要老师教（从此 “知识” 不再是壁垒和禁区）
+
+- `What are the first a few steps executed after execve() of a ELF dynamic link binary?`
+- `How can I compile an ELF binary that use an alternative dynamic loader than the default ld.so?`
+  - `-Wl,--dynamic-linker=`
+
+### 重新思考 PLT 的设计
+
+> 极致性能：云上linux虚拟机，单个应用直接在内核态执行。
+
+```assembly
+puts@PLT:
+  endbr64
+  bnd jmpq *GOT[n]  // *offset(%rip)
+```
+
+一个有趣 (且根本) 的问题
+
+- **库函数调用看起来 “很浪费”**：连续的跳转
+- 为什么不在加载时执行静态链接？
+  - 把指令中的立即数替换成跳转地址，这样就避免了查表？
+  - <font color='red'>**初始化开销 VS 查表的开销**</font>
+  - 动态链接：复用节省空间，无论是磁盘空间和内存空间（共享动态库的代码段），减少物理页换入换出、增加缓存命中率
+    - 内核中会为每个文件节点维持一个radix树（Page Cache），记录了为加载该文件已经分配的物理内存页框
+
+### 代码解决了，数据呢？
+
+如果我自己的共享库要使用数据？
+
+```c
+extern FILE *stdout;
+extern char *__lib_private;
+```
+
+- 对于 stdout，无论多少库，都只有一个副本，必须查表
+  - `stdout`这个变量是放在 libc.so 中，还是a.out？
+
+- 对于 buf，可以直接翻译成 PC 相对寻址
+
+这个问题 GPT-4 答错了
+
+- `-fPIC` 默认会为**所有 extern 数据**增加一层间接访问
+  - 此时共享库中只有它的地址，需要重定位
+- `__attribute__((visibility("hidden")))`控制符号（如函数或变量）的链接可见性
+  - 不会在共享库的符号表中导出，其他链接到该库的代码不能直接访问该符号
+
+## LD_PRELOAD
+
+### 链接 “修改” 过的 libc
+
+- 不用像修改器那样 “入侵” 地址空间了
+- 程序会主动把控制流交给我们
+
+`LD_PRELOAD`: 在加载之前 preload
+
+- 拦截程序对库函数的调用，如调试和内存检测、性能分析、兼容性修复等；
+
+ `How can I hook calls to malloc and free using LD_PRELOAD?`
+
+- 利用动态链接特性：符号先到先占坑
+  - 先加载一个自己的库，占据符号
+- 通过`dlsym`函数来获取原始`malloc`和`free`的地址
+
+### 其他操作系统上的 Hooking
+
+> Open Question: 如何反游戏外挂？
+
+`Windows DLL Injection`：
+
+- `DLL: Dynamic Link Library`
+
+- 理论效果与 `LD_PRELOAD` 类似
+
+Android
+
+- LSPosed (Xposed 后继项目)
+- Android App 是一个 Java 程序
+  - 都是 Zygote 的后代 
