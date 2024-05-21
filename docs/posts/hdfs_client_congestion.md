@@ -43,8 +43,7 @@ public PipelineAck.ECN getECN() {
     if (!pipelineSupportECN) {
         return PipelineAck.ECN.DISABLED;
     }
-    double load = ManagementFactory.getOperatingSystemMXBean()
-        .getSystemLoadAverage();
+    double load = ManagementFactory.getOperatingSystemMXBean().getSystemLoadAverage();
     // 系统平均负载 > 1.5 * 核数
     return load > NUM_CORES * CONGESTION_RATIO ? PipelineAck.ECN.CONGESTED :
     PipelineAck.ECN.SUPPORTED;
@@ -53,16 +52,16 @@ public PipelineAck.ECN getECN() {
 
 ### 拥塞的判断
 
-`系统平均负载 > 1.5 * 核数`(Hadoop 3.4 版本可配置)
+`系统平均负载 > 1.5 * 核数`(Hadoop 3.4 版本可配置)，注意 $负载 \ne 利用率 $
 
 > The v0 patch allows the datanode to signal congestion when the load of the system is **over 1.5 times of the number of available cores**, which means that there are **at least 50% more processes are waiting to be scheduled** in the OS. We found it an effective metric to signal that the DNs are undergoing massive amount of writes.
 
-为什么磁盘慢时（大量磁盘使用时），CPU 负载会飙高。
+为什么**磁盘慢时（大量磁盘使用时），CPU 负载会飙高**。
 
-- CPU负载显示的是在一段时间内**CPU正在处理以及等待CPU处理的进程数之和的统计信息**，也就是CPU使用队列的长度的统计信息。
+- CPU负载显示的是在一段时间内<font color='red'>**CPU正在处理以及等待CPU处理的进程数之和的统计信息**</font>（waiting threads and tasks along with processes being executed），也就是CPU使用队列的长度的统计信息。
 
 LInux 系统中还CPU负载包含处于**不可中断状态的任务**（`TASK_UNINTERRUPTIBLE` 或 `nr_uninterruptible`），被认为是系统负载：
 
-- 态被标志为“D”：`uninterruptible sleep`
+- 状态被标志为“D”：`uninterruptible sleep`
 
 - 通常**等待IO设备、等待网络**的时候，进程会处于`uninterruptible sleep`状态；
