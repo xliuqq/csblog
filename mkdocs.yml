@@ -88,6 +88,7 @@ nav:
   - 论文:
     - go并发bugs: paper/go_concurrency_bugs.md
     - HPC中的作业调度: paper/job_scheduling_in_hpc.md
+    - 可扩展性的代价: paper/scalability_but_at_what_cost.md
   - Web后端开发:
     - 总览: web_backend/README.md
     - 切面编程(Java): web_backend/aop_java.md
