@@ -1,9 +1,11 @@
-```
+---
 date: 2024-05-21
 readtime: 5
 categories:
   - devops
-```
+---
+
+
 
 
 
@@ -11,13 +13,18 @@ categories:
 
 
 
-使用 [softprops/action-gh-release: GitHub Action for creating GitHub Releases](https://github.com/softprops/action-gh-release)
+在 Github 上发布 Release 时，默认只会发布源码的zip包，但是有时候会想要将一些编译出来的文件也放在 Release 中。虽然可以在本地编译，然后通过界面手动上传。但是可以基于 Github Action 实现自动发布。
 
 
+
+<!-- more -->
 
 
 
 ## 示例
+
+> 使用 [softprops/action-gh-release: GitHub Action for creating GitHub Releases](https://github.com/softprops/action-gh-release)
+>
 
 Java 项目为例，Release 时发布 fat jar。
 
@@ -28,7 +35,9 @@ Java 项目为例，Release 时发布 fat jar。
 `.github/workflows/release.yaml`
 
 - 当推送 tag 时，进行编译，生成jar包，并新建 Release；
-- 默认不会生成 Release Notes（Body）；
+- 默认生成的 Release Notes（Body）仅包含 Commit 信息；
+  - 可以通过其它工具，生成 ChangeLog，并指定该文件为 Release Notes。
+
 
 ```yaml
 name: Release
