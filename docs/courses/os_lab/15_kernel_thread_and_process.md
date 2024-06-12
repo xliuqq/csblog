@@ -168,4 +168,4 @@ void _exit(int status)
 
 - 第 3 章 - [Dialogue](./book_os_three_pieces/03-dialogue-virtualization.pdf)
 - 第 4 章 - [Processes](./book_os_three_pieces/04-cpu-intro.pdf)
-- 第 5 章 - [Process AP](./book_os_three_pieces/05-cpu-api.pdf)
+- 第 5 章 - [Process API](./book_os_three_pieces/05-cpu-api.pdf)
