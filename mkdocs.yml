@@ -85,6 +85,19 @@ nav:
       - 9.并发控制：同步（条件变量）: courses/os_lab/09_sync_condition.md
       - 10.并发控制：同步（信号量）: courses/os_lab/10_sync_semphore.md
       - 11.真实世界的并发编程: courses/os_lab/11_concurrent_in_real_world.md
+      - 12.并发BUG分类: courses/os_lab/12_concurrent_bug_category.md
+      - 13.并发 Bug 的应对: courses/os_lab/13_concurrent_bug_defense.md
+      - 14.多处理器系统与中断机制: courses/os_lab/14_multi_cpu_and_interrupt.md
+      - 15.操作系统上的进程: courses/os_lab/15_kernel_thread_and_process.md
+      - 16.Linux 操作系统: courses/os_lab/16_application_in_linux.md
+      - 17.Linux 进程的地址空间: courses/os_lab/17_hack_linux_process_address.md
+      - 18.操作系统实验生存指南: courses/os_lab/18_os_lab_live_guide.md
+      - 19.系统调用和 UNIX Shell: courses/os_lab/19_system_call_and_shell.md
+      - 20.C标准库和实现: courses/os_lab/20-c_standard_lib.md
+      - 21-22.可执行文件与加载: courses/os_lab/21-22-executable_files_loading.md
+      - 23.状态机模型的应用: courses/os_lab/23_application_of_state_machine.md
+      - 24.操作系统进程的实现 : courses/os_lab/24_impletation_of_os_process.md
+      - 25.存储设备原理: courses/os_lab/25_store_device.md
   - 论文:
     - go并发bugs: paper/go_concurrency_bugs.md
     - HPC中的作业调度: paper/job_scheduling_in_hpc.md
