@@ -18,6 +18,8 @@ theme:
     - navigation.tabs.sticky
     - navigation.top
     - navigation.footer
+    - navigation.indexes
+
   language: 'zh'
   icon:
     repo: fontawesome/brands/github
@@ -60,8 +62,9 @@ nav:
     - index.md
     - 标签: tags.md
   - 书籍:
+    - index.md
     - 数据密集型系统设计: 
-      - books/data_intensive_system_book/README.md
+      - books/data_intensive_system_book/index.md
       - books/data_intensive_system_book/1_data_system_basic.md
       - books/data_intensive_system_book/2_data_model_query_language.md
       - books/data_intensive_system_book/3_data_store_and_search.md
@@ -69,6 +72,8 @@ nav:
       - books/data_intensive_system_book/5_replication.md
       - books/data_intensive_system_book/6_partitions.md
       - books/data_intensive_system_book/7_transaction.md
+      - books/data_intensive_system_book/8_trouble_in_distributed_system.md
+      - books/data_intensive_system_book/9_consistency_consensus.md
   - 算法谜题:
     - algorithmic_puzzles/README.md
   - 课程:
