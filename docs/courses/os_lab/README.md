@@ -58,7 +58,7 @@ OS Lab
 
 - [L0: 为计算机硬件编程](./L0_programming_for_hardware.md)
 - [L1: 物理内存管理 (pmm)](./L1_pmm.md)
-- [L2: 内核线程管理 (kmt)](./L2_pmm.md)
+- [L2: 内核线程管理 (kmt)](./L2_kmt.md)
 - [L3: 用户态进程 (uproc)](./L3_uproc.md)
 - [L4: 虚拟文件系统 (vfs)](./L4_vfs.md)
 
