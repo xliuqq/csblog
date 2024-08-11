@@ -61,8 +61,12 @@ nav:
   - 博客:
     - index.md
     - 标签: tags.md
+  - 云原生:
+    - k8s:
+      - 架构与组件: cloud/k8s/k8s.md
+      - 资源对象: cloud/k8s/k8s-resource.md
   - 书籍:
-    - index.md
+    - books/index.md
     - 数据密集型系统设计: 
       - books/data_intensive_system_book/index.md
       - books/data_intensive_system_book/1_data_system_basic.md
@@ -103,6 +107,11 @@ nav:
       - 23.状态机模型的应用: courses/os_lab/23_application_of_state_machine.md
       - 24.操作系统进程的实现 : courses/os_lab/24_impletation_of_os_process.md
       - 25.存储设备原理: courses/os_lab/25_store_device.md
+      - 26.输入输出设备: courses/os_lab/26_input_output_device.md
+      - 27.设备驱动程序与文件系统: courses/os_lab/27_device_driver_and_filesystem.md
+      - 28.FAT 和 UNIX 文件系统: courses/os_lab/28_FAT_UNIX_filesystem.md
+      - 29.持久数据的可靠性: courses/os_lab/29_available_durable_data.md
+      - 30.课程总结: courses/os_lab/30_summarize.md
   - 论文:
     - go并发bugs: paper/go_concurrency_bugs.md
     - HPC中的作业调度: paper/job_scheduling_in_hpc.md
