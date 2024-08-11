@@ -64,6 +64,7 @@ nav:
   - 云原生:
     - k8s:
       - 架构与组件: cloud/k8s/k8s.md
+      - 垃圾回收: cloud/k8s/garbage_collect.md
       - 资源对象: cloud/k8s/k8s-resource.md
   - 书籍:
     - books/index.md
