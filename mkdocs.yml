@@ -8,6 +8,8 @@ docs_dir: docs
 site_dir: site
  
 use_directory_urls: false
+exclude_docs: |
+  !.pics
   
 theme:
   name: material
@@ -81,6 +83,14 @@ nav:
       - books/data_intensive_system_book/9_consistency_consensus.md
   - 算法谜题:
     - algorithmic_puzzles/README.md
+  - 编程语言:
+    - Java:
+      - Native: 
+        - 概览: languages/java/native/README.md
+        - JNI: 
+          - 原理: languages/java/native/jni.md
+          - 示例: languages/java/native/jni_demo.md
+        - JNR: languages/java/native/jnr.md
   - 课程:
     - 操作系统设计与实现(2023): 
       - 0.整体大纲: courses/os_lab/README.md
