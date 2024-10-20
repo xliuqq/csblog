@@ -1,5 +1,7 @@
 # 一致性与共识
 
+> 本章引用了大量关于分布式系统理论的研究。虽然理论论文和证明并不总是容易理解，有时也会做出不切实际的假设，但它们对于指导这一领域的实践有着极其重要的价值：它们帮助我们推理什么可以做，什么不可以做，帮助我们找到反直觉的分布式系统缺陷。如果你有时间，这些参考资料值得探索。
+
 在本章中，我们将讨论构建容错分布式系统的算法和协议的一些例子。假设 [第八章](./8_trouble_in_distributed_system.md) 的所有问题都可能发生：
 
 - 网络中的数据包可能会丢失、重新排序、重复推送或任意延迟；
@@ -15,9 +17,45 @@
 - 一旦达成共识，应用可以将其用于各种目的。
 - 重要的是只有一个领导者，且所有的节点都认同其领导。
 
+在本章中，我们从几个不同的角度审视了关于一致性与共识的话题。
 
+- 线性一致性：使多副本数据看起来好像只有一个副本一样，并使其上所有操作都原子性地生效；
+- 因果性：提供较弱的一致性模型：某些事件可以是 **并发** 的，版本历史就像是一条不断分叉与合并的时间线。
 
+即使捕获到因果顺序（例如使用兰伯特时间戳），有些事情也不能通过这种方式实现：
 
+- 需要确保用户名是唯一的，并拒绝同一用户名的其他并发注册。如果一个节点要通过注册，则需要知道其他的节点没有在并发抢注同一用户名的过程中。
+
+这个问题引领我们走向 **共识**。与共识等价的问题包括：
+
+- 线性一致性的 CAS 寄存器：寄存器需要基于当前值是否等于操作给出的参数，原子地 **决定** 是否设置新值。
+- 原子事务提交：数据库必须 **决定** 是否提交或中止分布式事务。
+- 全序广播：消息系统必须 **决定** 传递消息的顺序。
+- 锁和租约：当几个客户端争抢锁或租约时，由锁来 **决定** 哪个客户端成功获得锁。
+- 成员 / 协调服务：给定某种故障检测器（例如超时），系统必须 **决定** 哪些节点活着，哪些节点因为会话超时需要被宣告死亡。
+- 唯一性约束：当多个事务同时尝试使用相同的键创建冲突记录时，约束必须 **决定** 哪一个被允许，哪些因为违反约束而失败。
+
+单领导者数据库中：所有决策权归属于领导者，提供线性一致的操作，唯一性约束，完全有序的复制日志，以及更多。
+
+但如果该领导者失效，或者如果网络中断导致领导者不可达，则系统失效。应对方法有：
+
+- 等待领导者恢复，接受系统将在这段时间阻塞的事实。许多 XA/JTA 事务协调者选择这个选项。
+  - 并不能完全达成共识，因为它不能满足 **终止** 属性的要求：如果领导者续命失败，系统可能会永久阻塞。
+- 人工故障切换，让人类选择一个新的领导者节点，并重新配置系统使之生效。
+- 使用共识算法自动选择一个新的领导者。使用成熟的算法来正确处理恶劣的网络条件是明智之举【107】。
+
+尽管单领导者数据库可以提供线性一致性，且无需对每个写操作都执行共识算法，但共识对于保持及变更领导权仍然是必须的。
+
+- 使用单个领导者不过是 “缓兵之计”：共识仍然是需要的，只是在另一个地方，而且没那么频繁。
+
+像 ZooKeeper 这样的工具为应用提供了 “外包” 的共识、故障检测和成员服务。
+
+- 虽说使用不易，但总比自己去开发一个能经受 [第八章](./8_trouble_in_distributed_system.md) 中所有问题考验的算法要好得多。
+
+但并不是所有系统都需要共识：如无领导者复制和多领导者复制系统通常不会使用全局的共识。
+
+- 这些系统中出现的冲突（请参阅 “[处理写入冲突](./5_replication.md#处理写入冲突)”）正是不同领导者之间没有达成共识的结果；
+- 也许我们只是需要接受没有线性一致性的事实，并学会更好地与具有分支与合并版本历史的数据打交道。
 
 ## 一致性保证
 
@@ -32,8 +70,6 @@
 
 - 事务隔离主要是为了 **避免由于同时执行事务而导致的竞争状态**
 - 分布式一致性主要关于 **在面对延迟和故障时如何协调副本间的状态**。
-
-
 
 ## 线性一致性
 
@@ -84,8 +120,9 @@
 ![img](pics/fig9-4.png)
 
 <center>
-    <b>将读取和写入看起来已经生效的时间点进行可视化。客户端 B 的最后一次读取不是线性一致的</b>
+    <b>图9-4：将读取和写入看起来已经生效的时间点进行可视化。客户端 B 的最后一次读取不是线性一致的</b>
 </center>
+
 上图有趣的细节需要指出：
 
 - B 的 read(x)，D 的 write(x, 0), A 的 write(x, 1)：B 的读取值是1，因为数据库先处理D的写入，再是A的写入，最后是B的读取。这是可以接受的顺序，因为三个请求是并发的；
@@ -264,15 +301,752 @@ Attiya 和 Welch 【47】证明，如果你想要线性一致性，读写请求�
 
 - “[一致前缀读](./5_replication.md#一致前缀读)”：先有问题再有答案；
 - 在 “[检测并发写入](./5_replication.md#检测并发写入)” ：有两个操作 A 和 B，则存在三种可能性：A 发生在 B 之前，或 B 发生在 A 之前，或者 A 和 B**并发**。**此前发生（happened before）** 关系是因果关系的另一种表述。
-- 事务之间 **写偏差（write skew）** 的例子也说明了因果依赖。
+- 快照隔离提供了因果一致性，**读偏差（read skew）** 意味着读取的数据处于违反因果关系的状态（不可重复读，如 [图 7-6](pics/fig7-6.png) 所示）。
+- 事务之间 **写偏差（write skew）** 的例子（ [图 7-8](pics/fig7-8.png) ）也说明了因果依赖。
 
-快照隔离提供了因果一致性：
+因果关系对事件施加了一种 **顺序**：因在果之前；消息发送在消息收取之前。
 
 #### 因果顺序不是全序的
 
+**全序（total order）** 允许任意两个元素进行比较。
 
+**偏序的（partially ordered）** ：在某些情况下，可以说一个集合大于另一个（如果一个集合包含另一个集合的所有元素），但在其他情况下它们是无法比较[^7]。
+
+全序和偏序之间的差异反映在不同的数据库一致性模型中：
+
+- 线性一致性：操作是全序的：如果系统表现的就好像只有一个数据副本，并且所有操作都是原子性。全序在 [图 9-4](pics/fig9-4.png) 中以时间线表示。
+- 因果性：如果两个操作都没有在彼此 **之前发生**，那么这两个操作是并发的。
+
+在线性一致的数据存储中是不存在并发操作的：必须有且仅有一条时间线，所有的操作都在这条时间线上，构成一个全序关系。
+
+- 可能有几个请求在等待处理，但是数据存储确保了每个请求都是在唯一时间线上的某个时间点自动处理的，不存在任何并发。
+
+并发意味着时间线会分岔然后合并：
+
+- 不同分支上的操作是无法比较的（即并发操作）
+- [图 5-14](pics/fig5-14.png) 并不是一条直线的全序关系，而是一堆不同的操作并发进行
+
+ Git 这样的分布式版本控制系统，那么其版本历史与因果关系图极其相似:
+
+- 一个 **提交（Commit）** 发生在另一个提交之后，在一条直线上；
+- 遇到分支（当多个人同时在一个项目上工作时），**合并（Merge）** 会在这些并发创建的提交相融合时创建。
+
+#### 线性一致性强于因果一致性
+
+任何线性一致的系统都能正确保持因果性【7】。
+
+- 如果系统中有多个通信通道（如 [图 9-5](pics/fig9-5.png) 中的消息队列和文件存储服务），线性一致性可以自动保证因果性，系统无需任何特殊操作（如在不同组件间传递时间戳）
+
+- 使系统线性一致可能会损害其性能和可用性，尤其是在系统具有严重的网络延迟的情况下
+
+线性一致性并不是保持因果性的唯一途径，系统可以是因果一致的，而无需承担线性一致带来的性能折损（尤其对于 CAP 定理不适用的情况）
+
+- 在**所有的不会被网络延迟拖慢的一致性模型中，因果一致性是可行的最强的一致性模型**。而且在网络故障时仍能保持可用【2,42】
+
+新型的数据库，既能保证因果一致性，且性能与可用性与最终一致的系统类似【49,50,51】。
+
+- 在许多情况下，看上去需要线性一致性的系统，实际上需要的只是因果一致性
+- 研究相当新鲜，其中很多尚未应用到生产系统，仍然有不少挑战需要克服【52,53】
+
+#### 捕获因果关系
+
+当一个副本处理一个操作时，它必须确保所有因果前驱的操作（之前发生的所有操作）已经被处理
+
+- 如果前面的某个操作丢失了，后面的操作必须等待，直到前面的操作被处理完毕。
+
+用于确定 *哪些操作发生在其他操作之前* 的技术，与我们在 “[检测并发写入](./5_replication.md#检测并发写入)” 中所讨论的内容类似：
+
+- 那一节讨论了无领导者数据存储中的因果性：为了防止丢失更新，我们需要检测到对同一个键的并发写入；
+- 因果一致性则更进一步：它需要跟踪**整个数据库中的因果依赖**，而不仅仅是一个键。推广版本向量以解决此类问题【54】
+
+为了确定因果顺序，数据库需要知道应用读取了哪个版本的数据。
+
+- 在 [图 5-13](./pics/fig5-13.png) 中，来自先前操作的版本号在写入时被传回到数据库的原因；
+- [SSI（可串行化快照隔离）](./7_transaction.md#可串行化快照隔离)：当事务要提交时，数据库将检查它所读取的数据版本是否仍然是最新的。为此，数据库跟踪哪些数据被哪些事务所读取。
+
+### 序列号顺序
+
+实际上跟踪所有的因果关系是不切实际的：
+
+- 客户端在写入内容之前会先读取大量数据，无法弄清写入因果依赖于先前全部的读取内容，还是仅包括其中一部分。
+
+使用 **序列号（sequence number）** 或 **时间戳（timestamp）** 来排序事件
+
+- 来自一个 **逻辑时钟（logical clock）**，典型实现是使用一个每次操作自增的计数器。
+
+使用 **与因果一致（consistent with causality）** 的全序来生成序列号[^8]：
+
+- 如果操作 A 因果地发生在操作 B 前，那么在这个全序中 A 在 B 前（ A 具有比 B 更小的序列号）。并行操作之间可以任意排序。
+- 捕获了所有关于因果的信息，但也施加了一个比因果性要求更为严格的顺序。
+
+在单主复制的数据库中（请参阅 “[领导者与追随者](./5_replication.md#领导者与追随者)”），复制日志定义了与因果一致的写操作。
+
+- 主库可以简单地为每个操作自增一个计数器，从而为复制日志中的每个操作分配一个单调递增的序列号。
+- 从库按照它们在复制日志中出现的顺序来应用写操作，那么从库的状态始终是因果一致的（即使它落后于领导者）。
+
+#### 非因果序列号生成器
+
+如果主库不存在（可能因为使用了多主数据库或无主数据库，或者因为使用了分区的数据库），如何为操作生成序列号就没有那么明显。在实践中有各种各样的方法：
+
+- 每个节点都可以生成自己独立的一组序列号：如两个节点时一个节点生成奇数，一个节点生成偶数。
+  - *可以将日历时钟（物理时钟）的时间戳附加到每个操作上【55】*。*这种时间戳并不连续，但是如果它具有足够高的分辨率，那也许足以提供一个操作的全序关系。*
+- 可以预先分配序列号区块：如节点A拥有1-1000，节点B拥有1001-2000。每个节点可以独立分配所属区块中的序列号，并在序列号告急时请求分配一个新的区块。
+
+它们为每个操作生成一个唯一的，近似自增的序列号。然而它们都有同一个问题：**生成的序列号与因果不一致**。
+
+- 每个节点每秒可以处理不同数量的操作。一个奇数编号的操作和一个偶数编号的操作，无法确定哪一个操作在因果上先发生。
+- 来自物理时钟的时间戳会受到时钟偏移的影响，这可能会使其与因果不一致。如[图8-3](./pics/fig8-3.png)
+- 在分配区块的情况下，某个操作可能会被赋予一个范围在 1,001 到 2,000 内的序列号，然而一个因果上更晚的操作可能被赋予一个范围在 1 到 1,000 之间的数字。
+
+#### 兰伯特时间戳
+
+莱斯利・兰伯特（Leslie Lamport）于 1978 年提出**兰伯特时间戳**【56】，分布式系统领域中被引用最多的论文之一。
+
+- 每个节点都有一个唯一标识符，和一个保存自己执行操作数量的计数器；
+- 兰伯特时间戳就是两者的简单组合：（计数器，节点 ID）；
+- 两个节点有时可能具有相同的计数器值，但通过在时间戳中包含节点 ID，每个时间戳都是唯一；
+
+如下图9-8 说明了兰伯特时间戳的应用：
+
+- 客户端 A 从节点 2 接收计数器值 `5` ，然后将最大值 `5` 发送到节点 1 。此时，节点 1 的计数器仅为 `1` ，但是它立即前移至 `5` ，所以下一个操作的计数器的值为 `6` 。
+
+![img](pics//fig9-8.png)
+
+<center>
+    <b>图 9-8 Lamport 时间戳提供了与因果关系一致的全序。</b>
+</center>
+
+兰伯特时间戳提供了一个全序：如果你有两个时间戳，则 **计数器** 值大者是更大的时间戳。如果计数器值相同，则节点 ID 越大的，时间戳越大。
+
+- 每个节点和每个客户端跟踪迄今为止所见到的最大 **计数器** 值，并在每个请求中包含这个最大计数器值。
+- 当一个节点收到最大计数器值大于自身计数器值的请求或响应时，它立即将自己的计数器设置为这个最大值。
+
+兰伯特时间戳有时会与我们在 “[检测并发写入](./5_replication.md#检测并发写入)” 中看到的版本向量相混淆。
+
+- 版本向量可以区分两个操作是并发的，还是一个因果依赖另一个；
+- 兰伯特时间戳总是施行一个全序，无法分辨两个操作是并发的还是因果依赖。
+
+虽然兰伯特时间戳定义了一个与因果一致的全序，但它还不足以解决分布式系统中的许多常见问题。
+
+- 例如，考虑一个需要确保用户名能唯一标识用户帐户的系统。如果两个用户同时尝试使用相同的用户名创建帐户，则其中一个应该成功，另一个应该失败。
+
+兰伯特时间戳方法适用于事后确定胜利者：
+
+- 一旦你收集了系统中的所有用户名创建操作，就可以比较它们的时间戳。
+
+当某个节点需要**实时处理用户创建用户名的请求**时，这样的方法就无法满足了：
+
+- 节点需要 **马上（right now）** 决定这个请求是成功还是失败
+- 节点并不知道是否存在其他节点正在并发执行创建同样用户名的操作，罔论其它节点可能分配给那个操作的时间戳。
+- 为了确保没有其他节点正在使用相同的用户名和较小的时间戳并发创建同名账户，你必须检查其它每个节点，看看它在做什么【56】。
+- 如果其中一个节点由于网络问题出现故障或不可达，则整个系统可能被拖至停机。这样并不容错。
+
+问题是，只有在所有的操作都被收集之后，操作的全序才会出现。
+
+- 如果另一个节点已经产生了一些操作，但你还不知道那些操作是什么，那就无法构造所有操作最终的全序关系。
+
+确定全序关系已经尘埃落定，这将在 [全序广播](#全序广播) 一节中详细说明。
+
+### 全序广播
+
+单主复制通过选择一个节点作为主库来确定操作的全序，如果吞吐量超出单个主库的处理能力，如何扩展系统；如果主库失效，如何处理故障切换。在分布式系统文献中，这个问题被称为 **全序广播（total order broadcast）** 或 **原子广播（atomic broadcast）**[^9]【25,57,58】。
+
+> #### 顺序保证的范围
+>
+> 每个分区各有一个主库的分区数据库，通常只在每个分区内维持顺序，这意味着它们不能提供**跨分区的一致性保证**（例如，一致性快照，外键引用）。跨所有分区的全序是可能的，但需要额外的协调【59】。
+
+全序广播通常被描述为在节点间交换消息的协议。非正式地讲，它要满足两个安全属性：
+
+- 可靠交付（reliable delivery）：没有消息丢失：如果消息被传递到一个节点，它将被传递到所有节点。
+- 全序交付（totally ordered delivery）：消息以相同的顺序传递给每个节点。
+
+在网络中断的时候，消息是传不出去的，但是算法可以**不断重试**，以便在网络最终修复时，消息能及时通过并送达（当然它们必须仍然按照正确的顺序传递）。
+
+#### 使用全序广播
+
+像 ZooKeeper 和 etcd 这样的共识服务实际上实现了全序广播。暗示了**全序广播与共识之间有着紧密联系**。
+
+全序广播正是**数据库复制**所需的：如果每个消息都代表一次数据库的写入，且每个副本都按相同的顺序处理相同的写入，那么副本间将相互保持一致（除了临时的复制延迟）。这个原理被称为 **状态机复制（state machine replication）**【60】，我们将在 [第十一章](./11_streaming_processing.md) 中重新回到这个概念。
+
+全序广播可用来实现**可串行化的事务**：每个消息都表示一个确定性事务，以存储过程的形式来执行，且每个节点都以相同的顺序处理这些消息，那么数据库的分区和副本就可以相互保持一致【61】。
+
+全序广播的一个重要表现是，**顺序在消息送达时被固化**：如果后续的消息已经送达，节点就***不允许追溯地将（先前）消息插入顺序中的较早***位置。这个事实使得全序广播比时间戳排序更强。
+
+传递消息就像追加写入日志。由于所有节点必须以相同的顺序传递相同的消息，因此所有节点都可以读取日志，并看到相同的消息序列。
+
+全序广播对于实现提供防护令牌的锁服务也很有用：每个获取锁的请求都作为一条消息追加到日志末尾，并且所有的消息都按它们在日志中出现的顺序依次编号。序列号可以当成防护令牌用，因为它是单调递增的。在 ZooKeeper 中，这个序列号被称为 `zxid` 【15】。
+
+#### 使用全序广播实现线性一致的存储
+
+在线性一致的系统中，存在操作的全序。这是否意味着线性一致与全序广播一样？不尽然，但两者之间有着密切的联系[^10]。
+
+- 全序广播是异步的：消息被保证以固定的顺序可靠地传送，但是不能保证消息 **何时** 被送达（所以一个接收者可能落后于其他接收者）。
+
+- 线性一致性是新鲜性的保证：读取一定能看见最新的写入值。
+
+在全序广播基础上构建线性一致的存储。例如，你可以确保用户名能唯一标识用户帐户：
+
+- 对于每一个可能的用户名，都有一个带有 CAS 原子操作的线性一致寄存器；
+- 每个寄存器最初的值为空值（表示未使用该用户名），当用户想要创建一个用户名时，对该用户名的寄存器执行 CAS 操作；
+- 如果多个用户试图同时获取相同的用户名，则只有一个 CAS 操作会成功，因为其他用户会看到非空的值（由于线性一致性）。
+
+将全序广播当成仅追加日志【62,63】的方式来实现这种线性一致的 CAS 操作：
+
+- 在日志中追加一条消息，试探性地指明你要声明的用户名。
+- 读日志，并等待你刚才追加的消息被读回。[^11]
+- 检查是否有任何消息声称目标用户名的所有权。如果这些消息中的第一条就是你自己的消息，那么你就成功了：你可以提交声称的用户名（也许是通过向日志追加另一条消息）并向客户端确认。如果所需用户名的第一条消息来自其他用户，则中止操作。
+
+由于日志项是以相同顺序送达至所有节点，因此如果有多个并发写入，则所有节点会对最先到达者达成一致。类似的方法可以在一个日志的基础上实现可串行化的多对象事务【62】。
+
+这一过程保证写入是线性一致的，但它并不保证读取也是线性一致的
+
+- 从与**日志异步更新的存储**中读取数据，结果可能是陈旧的
+
+精确地说，这里描述的过程提供了 **顺序一致性（sequential consistency）**【47,64】，有时也称为 **时间线一致性（timeline consistency）**【65,66】，比线性一致性稍微弱一些的保证。
+
+使读取也线性一致，有几个选项：
+
+- 在日志中追加一条消息，然LLLL后读取日志，直到该消息被读回才执行实际的读取操作。消息在日志中的位置因此定义了读取发生的时间点（etcd 的法定人数读取有些类似这种情况【16】）。
+- 如果日志允许以线性一致的方式获取最新日志消息的位置，则可以查询该位置，等待该位置前的所有消息都传达到你，然后执行读取。（这是 Zookeeper `sync()` 操作背后的思想【15】）。
+- 从同步更新的副本中进行读取，因此可以确保结果是最新的（这种技术用于链式复制（chain replication）【63】）
+
+#### 使用线性一致性存储实现全序广播
+
+假设我们有线性一致的存储，接下来会展示如何在此基础上构建全序广播。
+
+- 有一个线性一致的寄存器来存储一个整数，并且有一个原子 **自增并返回（或者CAS）** 操作【28】。
+- 每个要通过全序广播发送的消息首先对线性一致寄存器执行 **自增并返回** 操作；
+- 将从寄存器获得的值作为序列号附加到消息中。然后你可以将消息发送到所有节点（重新发送任何丢失的消息），而收件人将按序列号依序传递（deliver）消息。
+
+实现一个带有原子性 **自增并返回** 操作的线性一致寄存器有多困难？
+
+- 简单地把它保存在单个节点内的变量中
+- 当该节点的网络连接中断时的情况，并在该节点失效时能恢复这个值【59】
+- 对线性一致性的序列号生成器进行过足够深入的思考，你不可避免地会得出一个共识算法。
+
+可以证明，线性一致的 CAS（或自增并返回）寄存器与全序广播都等价于 **共识** 问题【28,67】。
+
+## 分布式事务与共识
+
+**共识**：非正式地讲，目标只是 **让几个节点达成一致（get serveral nodes to agree on something）**。
+
+节点能达成一致，在很多场景下都非常重要，例如：
+
+- 领导选举：在单主复制的数据库中，所有节点需要就哪个节点是领导者达成一致。
+  - 如果一些节点由于网络故障而无法与其他节点通信，则可能会对领导权的归属引起争议。
+  - **脑裂**：错误的故障切换会导致两个节点都认为自己是领导者，导致不一致和数据丢失。
+- 原子提交[^12]：支持跨多节点或跨多分区事务的数据库，让所有节点对事务的结果达成一致。要么全部中止 / 回滚（如果出现任何错误），要么它们全部提交（如果没有出错）。
+
+> ### 共识的不可能性
+>
+> 作者 Fischer，Lynch 和 Paterson 命名的 FLP 结果【68】，它证明，如果存在节点可能崩溃的风险，则不存在 **总是** 能够达成共识的算法。
+>
+> 在分布式系统中，我们必须假设节点可能会崩溃，所以可靠的共识是不可能的。
+>
+> - FLP 结果是在 **异步系统模型** 中被证明的（请参阅 “[系统模型与现实](./8_trouble_in_distributed_system.md#系统模型与现实)”），而这是一种限制性很强的模型，它假定**确定性算法不能使用任何时钟或超时**。
+> - 如果允许算法使用 **超时** 或其他方法来识别可疑的崩溃节点（即使怀疑有时是错误的），则共识变为一个可解的问题【67】。即使仅仅允许算法使用随机数，也足以绕过这个不可能的结果【69】。
+
+**两阶段提交（2PC, two-phase commit）** 算法，这是解决原子提交问题最常见的办法，并在各种数据库、消息队列和应用服务器中被实现。事实证明 2PC 是一种共识算法，但不是一个非常好的共识算法【70,71】。
+
+通过对 2PC 的学习，我们将继续努力实现更好的一致性算法，比如 ZooKeeper（Zab）和 etcd（Raft）中使用的算法。
+
+### 原子提交与两阶段提交
+
+原子性可以防止失败的事务搅乱数据库，避免数据库陷入半成品结果和半更新状态。这对于多对象事务（请参阅 “[单对象和多对象操作](./7_transaction.md#单对象和多对象操作)”）和维护次级索引的数据库尤其重要。
+
+#### 从单节点到分布式原子提交
+
+单个数据库节点执行的事务，原子性通常由存储引擎实现：
+
+- 当客户端请求数据库节点提交事务时，数据库将使事务的写入持久化（通常在预写式日志中，请参阅 “[让 B 树更可靠](./3_data_store_and_search.md#让B树更可靠)”），然后将提交记录追加到磁盘中的日志里。
+- 如果数据库在这个过程中间崩溃，当节点重启时，事务会从日志中恢复：如果提交记录在崩溃之前成功地写入磁盘，则认为事务被提交；否则来自该事务的任何写入都被回滚。
+
+在单个节点上，事务的提交主要取决于数据持久化落盘的 **顺序**：首先是数据，然后是提交记录【72】。
+
+如果一个事务中涉及多个节点，仅向所有节点发送提交请求并独立提交每个节点的事务是不够的。提交在某些节点上成功，而在其他节点上失败：
+
+- 某些节点可能会检测到违反约束或冲突，因此需要中止，而其他节点则可以成功进行提交。
+- 某些提交请求可能在网络中丢失，最终由于超时而中止，而其他提交请求则通过。
+- 在提交记录完全写入之前，某些节点可能会崩溃，并在恢复时回滚，而其他节点则成功提交。
+
+事务提交必须是不可撤销的 —— 事务提交之后，你不能改变主意，并追溯性地中止事务。
+
+- 一旦数据被提交，其结果就对其他事务可见，因此其他客户端可能会开始依赖这些数据。
+- 如果一个事务在提交后被允许中止，所有那些读取了 **已提交却又被追溯声明不存在数据** 的事务也必须回滚。
+
+提交事务的结果有可能通过**事后执行另一个补偿事务**（compensating transaction）来取消【73,74】，但从数据库的角度来看，这是一个单独的事务，因此任何**关于跨事务正确性的保证都是应用自己的问题**。
+
+#### 两阶段提交
+
+**两阶段提交（two-phase commit）** 是一种用于实现跨多个节点的原子事务提交的算法，即确保所有节点提交或所有节点中止。它是分布式数据库中的经典算法【13,35,75】。
+
+- 2PC 在某些数据库内部使用，也以 **XA 事务** 的形式对应用可用【76,77】（例如 Java Transaction API 支持）或以 SOAP Web 服务的 `WS-AtomicTransaction` 形式提供给应用【78,79】。
+
+下图9-9 说明了 2PC 的基本流程。2PC 中的提交 / 中止过程分为两个阶段
+
+![**两阶段提交（2PC）的成功执行**](pics/fig9-9.png)
+
+<center><b>图 9-9 两阶段提交（2PC）的成功执行</b></center>
+
+> #### 不要把2PC和2PL搞混了
+>
+> 两阶段提交（2PC）和两阶段锁定（请参阅 “[两阶段锁定](./7_transaction.md#两阶段锁定)”）是两个完全不同的东西。2PC 在分布式数据库中提供原子提交，而 2PL 提供可串行化的隔离等级。为了避免混淆，最好把它们看作完全独立的概念，并忽略名称中不幸的相似性。
+
+2PC 使用一个通常不会出现在单节点事务中的新组件：**协调者**（coordinator，也称为 **事务管理器**，即 transaction manager）。
+
+- 协调者通常在请求事务的相同应用进程中以库的形式实现（例如，嵌入在 Java EE 容器中），但也可以是单独的进程或服务。这种协调者的例子包括 Narayana、JOTM、BTM 或 MSDTC。
+
+2PC 事务以应用在多个数据库节点（称为**参与者（participants）**）上读写数据开始。当应用准备提交时，协调者开始阶段 1：发送一个 **准备（prepare）** 请求到每个节点，询问它们是否能够提交。然后协调者会跟踪参与者的响应：
+
+- 如果**所有参与者**都回答 “是”，表示它们已经准备好提交，那么协调者在阶段 2 发出 **提交（commit）** 请求，然后提交真正发生。
+- 如果**任意一个参与者**回复了 “否”，则协调者在阶段 2 中向所有节点发送 **中止（abort）** 请求。
+
+#### 系统承诺
+
+工作原理：
+
+- 当应用想要启动一个分布式事务时，它向协调者请求一个事务 ID。此事务 ID 是全局唯一的。
+- 应用在每个参与者上启动单节点事务，并在单节点事务上捎带上这个全局事务 ID。**所有的读写都是在这些单节点事务中各自完成的**。如果在这个阶段出现任何问题（例如，节点崩溃或请求超时），则协调者或任何参与者都可以中止。
+- 当应用准备提交时，协调者向所有参与者发送一个 **准备** 请求，并打上全局事务 ID 的标记。如果任意一个请求失败或超时，则协调者向所有参与者发送针对该事务 ID 的中止请求。
+- 参与者收到准备请求时，需要确保在任意情况下都的确可以提交事务。
+  - 包括将所有事务数据写入磁盘（出现崩溃、电源故障或硬盘空间不足都不能是稍后拒绝提交的理由）以及检查是否存在任何冲突或违反约束；
+  - 通过向协调者回答 “是”，节点承诺，只要请求，这个事务一定可以不出差错地提交。
+- 当协调者收到所有准备请求的答复时，会就提交或中止事务作出明确的决定（只有在所有参与者投赞成票的情况下才会提交）。
+  - 协调者必须把这个决定写到磁盘上的事务日志中，如果它随后就崩溃，恢复后也能知道自己所做的决定。这被称为 **提交点（commit point）**。
+- 一旦协调者的决定落盘，提交或中止请求会发送给所有参与者。如果这个请求失败或超时，协调者必须永远保持重试，直到成功为止。如果参与者在此期间崩溃，事务将在其恢复后提交 —— 由于参与者投了赞成，因此恢复后它不能拒绝提交。
+
+该协议包含两个关键的 “不归路” 点：保证了 2PC 的原子性
+
+- 当参与者投票 “是” 时，它承诺它稍后肯定能够提交（尽管协调者可能仍然选择放弃）；
+- 一旦协调者做出决定，这一决定是不可撤销。
+
+#### 协调者失效
+
+如果协调者在发送 **准备** 请求之前失败，参与者可以安全地中止事务。一旦参与者收到了准备请求并投了 “是”，就不能再单方面放弃：必须等待协调者回答事务是否已经提交或中止
+
+- 果此时协调者崩溃或网络出现故障，参与者什么也做不了只能等待。参与者的这种事务状态称为 **存疑（in doubt）** 的或 **不确定（uncertain）** 的
+
+如下图9-10所示。协调者实际上决定提交，数据库 2 收到提交请求。但是，协调者在将提交请求发送到数据库 1 之前发生崩溃，因此数据库 1 不知道是否提交或中止。
+
+- 即使 **超时** 在这里也没有帮助：如果数据库 1 在超时后单方面中止，它将最终与执行提交的数据库 2 不一致。同样，单方面提交也是不安全的，因为另一个参与者可能已经中止了。
+
+![参与者投赞成票后，协调者崩溃。数据库 1 不知道是否提交或中止](pics/fig9-10.png)
+
+<center><b>图 9-10 参与者投赞成票后，协调者崩溃。数据库 1 不知道是否提交或中止</b></center>
+
+原则上参与者可以相互沟通，找出每个参与者是如何投票的，并达成一致，但这不是 2PC 协议的一部分。
+
+可以完成 2PC 的唯一方法是等待协调者恢复。2PC 的 **提交点** 归结为协调者上的常规单节点原子提交。
+
+- 协调者必须在向参与者发送提交或中止请求之前，将其提交或中止决定写入磁盘上的事务日志：协调者恢复后，通过读取其事务日志来确定所有存疑事务的状态。
+
+#### 三阶段提交
+
+两阶段提交被称为 **阻塞（blocking）**- 原子提交协议，因为存在 2PC 可能卡住并等待协调者恢复的情况。
+
+**三阶段提交（3PC）** 的算法【13,80】，假定网络延迟有界，节点响应时间有限；
+
+- 在大多数具有无限网络延迟和进程暂停的实际系统中（见 [第八章](./8_trouble_in_distributed_system.md)），它并不能保证原子性。
+
+非阻塞原子提交需要一个 **完美的故障检测器（perfect failure detector）**【67,71】—— 即一个可靠的机制来判断一个节点是否已经崩溃。
+
+- 在具有无限延迟的网络中，超时并不是一种可靠的故障检测机制，因为即使没有节点崩溃，请求也可能由于网络问题而超时。
+
+- 出于这个原因，2PC 仍然被使用，尽管大家都清楚可能存在协调者故障的问题。
+
+### 实践中的分布式事务
+
+分布式事务的名声毁誉参半，尤其是那些通过两阶段提交实现的。许多云服务由于其导致的运维问题，而选择不实现分布式事务【85,86】。
+
+- 两阶段被视作提供了一个难以实现的重要的安全性保证；
+- 导致运维问题，造成性能下降，做出超过能力范围的承诺而饱受批评【81,82,83,84】。
+
+分布式事务的某些实现会带来严重的性能损失：
+
+- MySQL 中的分布式事务比单节点事务慢 10 倍以上【87】；
+- 两阶段提交所固有的性能成本，大部分是由于**崩溃恢复所需的额外强制刷盘**（`fsync`）【88】以及额外的网络往返。
+
+两种截然不同的分布式事务类型经常被混淆：
+
+- 数据库内部的分布式事务：分布式数据库支持数据库节点之间的内部事务，如VoltDB和 MySQL Cluster。所有参与事务的节点都运行相同的数据库软件。
+- 异构分布式事务：参与者是由两种或两种以上的不同技术组成。跨系统的分布式事务必须确保原子提交。
+
+数据库内部事务不必与任何其他系统兼容，因此它们可以使用任何协议，并能针对特定技术进行特定的优化。因此数据库内部的分布式事务通常工作地很好。另一方面，跨异构技术的事务则更有挑战性。
+
+#### 恰好一次的消息处理
+
+异构的分布式事务处理能够以强大的方式集成不同的系统。例如：消息队列中的一条消息可以被确认为已处理，当且仅当用于处理消息的数据库事务成功提交。
+
+- 通过在同一个事务中原子提交 **消息确认** 和 **数据库写入** 两个操作来实现。
+- 即使消息代理和数据库是在不同机器上运行的两种不相关的技术。
+
+如果消息传递或数据库事务任意一者失败，两者都会中止，因此消息代理可能会在稍后安全地重传消息。
+
+- 通过原子提交 **消息处理及其副作用**，即使在成功之前需要几次重试，也可以确保消息被 **有效地（effectively）** 恰好处理一次。中止会抛弃部分完成事务所导致的任何副作用。
+
+只有当所有受事务影响的系统都使用同样的 **原子提交协议（atomic commit protocol）** 时，这样的分布式事务才是可能的。假设处理消息的副作用是发送一封邮件，而邮件服务器并不支持两阶段提交：
+
+- 如果消息处理失败并重试，则可能会发送两次或更多次的邮件。
+- 如果处理消息的所有副作用都可以在事务中止时回滚，那么这样的处理流程就可以安全地重试，就好像什么都没有发生过一样。
+
+#### XA事务
+
+*X/Open XA*（**扩展架构（eXtended Architecture）** 的缩写）是**跨异构**技术实现两阶段提交的标准【76,77】。
+
+- 许多传统关系数据库（包括 PostgreSQL、MySQL、DB2、SQL Server 和 Oracle）和消息代理（包括 ActiveMQ、HornetQ、MSMQ 和 IBM MQ） 都支持 XA。
+
+XA 不是一个网络协议 —— 它只是一个用来与事务协调者连接的 C API。
+
+- Java EE 中的 XA 事务是使用 **Java 事务 API（JTA, Java Transaction API）** 实现，**Java 数据库连接（JDBC, Java Database Connectivity）** 的数据库驱动，以及许多使用 **Java 消息服务（JMS）** API 的消息代理都支持 **Java 事务 API（JTA）**。
+
+XA 假定你的应用使用网络驱动或客户端库来与 **参与者**（数据库或消息服务）进行通信。
+
+- 驱动或客户端会调用 XA API 以查明操作是否为分布式事务的一部分。如果是，则将必要的信息发往数据库服务器；
+- 驱动还会向协调者暴露回调接口，协调者可以通过回调来要求参与者准备、提交或中止。
+
+事务协调者需要实现 XA API。标准没有指明应该如何实现，但实际上协调者通常只是一个库，被加载到发起事务的应用的同一个进程中（而不是单独的服务）。
+
+- 在事务中跟踪所有的参与者，并在要求它们 **准备** 之后收集参与者的响应（通过驱动回调），并使用本地磁盘上的日志记录每次事务的决定（提交 / 中止）；
+
+如果应用进程崩溃，或者运行应用的机器报销了，协调者也不再存在：
+
+- 带有 **准备了** 但未提交事务的参与者都会在疑虑中卡死；
+- 必须重启该服务器，协调程序库必须读取本地日志以恢复每个事务的提交 / 中止结果。
+- 协调者才能使用数据库驱动的 XA 回调来要求参与者提交或中止。数据库服务器不能直接联系协调者，因为所有通信都必须通过客户端库。
+
+#### 怀疑时持有锁
+
+为什么我们这么关心存疑事务？系统的其他部分就不能继续正常工作，无视那些终将被清理的存疑事务吗？
+
+- 在 “[读已提交](./7_transaction.md#读已提交)” 中所讨论的那样，数据库事务通常获取待修改的行上的 **行级排他锁**，以防止脏写。
+- 如果要使用可串行化的隔离等级，则使用两阶段锁定的数据库也必须为事务所读取的行加上共享锁（请参阅 “[两阶段锁定](./7_transaction.md#两阶段锁定)”）
+
+在事务提交或中止之前，数据库不能释放这些锁，如[图9-9](./pics/fig9-9.png)在使用两阶段提交时，事务必须在**整个存疑期间持有这些锁**。
+
+- 当这些锁被持有时，其他事务不能修改这些行。根据数据库的不同，其他事务甚至可能因为读取这些行而被阻塞。
+
+#### 从协调者故障中恢复
+
+在实践中，**孤立（orphaned）** 的存疑事务确实会出现【89,90】。这些事务无法自动解决，所以它们永远待在数据库中，持有锁并阻塞其他事务。
+
+- 唯一的出路是让管理员手动决定提交还是回滚事务。管理员必须检查每个存疑事务的参与者，确定是否有任何参与者已经提交或中止，然后将相同的结果应用于其他参与者。
+- 需要大量的人力，并且可能发生在严重的生产中断期间（不然为什么协调者处于这种糟糕的状态），并很可能要在巨大精神压力和时间压力下完成。
+
+许多 XA 的实现都有一个叫做 **启发式决策（heuristic decisions）** 的紧急逃生舱口：
+
+- 允许参与者单方面决定放弃或提交一个存疑事务，而无需协调者做出最终决定【76,77,91】；
+-  **启发式** 是 **可能破坏原子性** 的委婉说法，因为它违背了两阶段提交的系统承诺。
+
+#### 分布式事务的限制
+
+事务协调者本身就是一种数据库（存储了事务的结果），因此需要像其他重要数据库一样小心地打交道：
+
+- 如果协调者没有复制，而是只在单台机器上运行，那么它是整个系统的失效单点（因为它的失效会导致其他应用服务器阻塞在存疑事务持有的锁上）。
+
+- 许多服务器端应用都是使用无状态模式开发，持久状态都存储在数据库。当协调者成为应用服务器的一部分时，它会改变部署的性质。
+
+  - 协调者的日志成为持久系统状态的关键部分 —— 与数据库本身一样重要。
+
+-  XA 需要兼容各种数据系统，因此它必须是所有系统的最小公分母
+
+  - 不能检测不同系统间的死锁（因为这将需要一个标准协议来让系统交换每个事务正在等待的锁的信息）
+  - 无法与 SSI（请参阅 [可串行化快照隔离](./7_transaction.md#可串行化快照隔离)）协同工作，因为这需要一个跨系统定位冲突的协议。
+
+- 对于数据库内部的分布式事务（不是 XA），限制没有这么大—— 例如，分布式版本的 SSI 是可能的。
+
+  -  **扩大失效（amplifying failures）**：2PC 成功提交一个事务需要所有参与者的响应。因此，如果系统的 **任何** 部分损坏，事务也会失败。
+
+这些事实是否意味着我们应该放弃保持几个系统相互一致的所有希望？不，在没有异构分布式事务的痛苦的情况下可以实现同样的事情。
+
+### 容错共识
+
+非正式地，共识意味着让几个节点就某事达成一致。
+
+共识问题通常形式化如下：一个或多个节点可以 **提议（propose）** 某些值，而共识算法 **决定（decides）** 采用其中的某个值。共识算法必须满足以下性质【25】[^13]：
+
+- **一致同意**（Uniform agreement）：没有两个节点的决定不同。
+- **完整性**（Integrity）：没有节点决定两次。
+- **有效性**（Validity）：如果一个节点决定了值 `v` ，则 `v` 由某个节点所提议。
+- **终止**（Termination）：由所有未崩溃的节点来最终决定值。
+
+**有效性** 属性主要是为了排除平凡的解决方案：例如，无论提议了什么值，你都可以有一个始终决定值为 `null` 的算法。
+
+**终止** 属性形式化了容错的思想。即使部分节点出现故障，其他节点也必须达成一项决定（**终止** 是一种 **活性属性**，而另外三种是 **安全属性** —— 请参阅 “[安全性和活性](./8_trouble_in_distributed_system.md#安全性和活性)”）。
+
+共识的系统模型假设，当一个节点 “崩溃” 时，它会突然消失而且永远不会回来。
+
+- 任何需要等待节点恢复的算法都不能满足 **终止** 属性，2PC 不符合终止属性的要求。
+
+**终止** 属性取决于一个假设，**不超过一半的节点崩溃或不可达**。即使多数节点出现故障或存在严重的网络问题，绝大多数共识的实现都能始终确保安全属性得到满足 —— 一致同意，完整性和有效性【92】。
+
+大多数共识算法假设不存在 **拜占庭式错误**，克服拜占庭故障，稳健地达成共识是可能的，只要少于三分之一的节点存在拜占庭故障【25,93】。
+
+#### 共识算法和全序广播
+
+最著名的容错共识算法是 **视图戳复制（VSR, Viewstamped Replication）**【94,95】，Paxos 【96,97,98,99】，Raft 【22,100,101】以及 Zab 【15,21,102】 。这些算法之间有不少相似之处，但它们并不相同【103】。
+
+本书中我们不会介绍各种算法的详细细节：了解一些它们共通的高级思想通常已经足够了，除非你准备自己实现一个共识系统。（可能并不明智，相当难【98,104】）
+
+大多数这些算法实际上并不直接使用这里描述的形式化模型（提议与决定单个值，并满足一致同意、完整性、有效性和终止属性）。取而代之的是，它们决定了值的 **顺序（sequence）**，这使它们成为全序广播算法。
+
+全序广播要求将消息按照相同的顺序，恰好传递一次，准确传送到所有节点。相当于进行了几轮共识：在每一轮中，节点提议下一条要发送的消息，然后决定在全序中下一条要发送的消息【67】。
+
+全序广播相当于重复进行多轮共识（每次共识决定与一次消息传递相对应）：
+
+- 由于 **一致同意** 属性，所有节点决定以相同的顺序传递相同的消息。
+- 由于 **完整性** 属性，消息不会重复。
+- 由于 **有效性** 属性，消息不会被损坏，也不能凭空编造。
+- 由于 **终止** 属性，消息不会丢失。
+
+视图戳复制，Raft 和 Zab 直接实现了全序广播，因为这样做比重复 **一次一值（one value a time）** 的共识更高效。在 Paxos 的情况下，这种优化被称为 Multi-Paxos。
+
+#### 单主复制与共识
+
+单主复制将所有的写入操作都交给主库，并以相同的顺序将它们应用到从库，从而使副本保持在最新状态。这实际上不就是一个全序广播吗？为什么没担心过共识问题呢？
+
+- 取决于如何选择领导者：主库是由运维人员手动选择和配置， **独裁类型** 的 “共识算法”。
+- 如果该节点发生故障，则系统将无法写入，直到运维手动配置其他节点作为主库。无法满足共识的 **终止** 属性，因为它需要人为干预才能取得 **进展**。
+
+一些数据库会自动执行领导者选举和故障切换，如果旧主库失效，会提拔一个从库为新主库：针对脑裂的问题
+
+- 选出一位领导者需要共识，如果这里描述的共识算法实际上是全序广播算法，并且全序广播就像单主复制，而单主复制需要一个领导者，那么...
+
+#### 纪元编号和法定人数
+
+迄今为止所讨论的所有共识协议，在内部都以某种形式使用一个领导者，但并不能保证领导者是独一无二：
+
+- 更弱的保证：协议定义了一个 **纪元编号**（epoch number，在 Paxos 中被称为 **投票编号**，即 ballot number，在视图戳复制中被称为 **视图编号**，即 view number，以及在 Raft 中被为 **任期号码**，即 term number），并确保在每个时代中，领导者都是唯一的。
+
+每次当现任领导被认为挂掉的时候，节点间就会开始一场投票，以选出一个新领导。
+
+- 选举被赋予一个递增的纪元编号，因此纪元编号是全序且单调递增；
+- 如果两个不同的时代的领导者之间出现冲突（也许是因为前任领导者实际上并未死亡），那么带有更高纪元编号的领导说了算。
+
+在任何领导者被允许决定任何事情之前，必须先检查是否存在其他带有更高纪元编号的领导者，它们可能会做出相互冲突的决定。
+
+- 对领导者想要做出的**每一个决定，都必须将提议值发送给其他节点**，并等待法定人数的节点响应并赞成提案。
+- 法定人数通常（但不总是）由多数节点组成【105】。只有在没有意识到任何带有更高纪元编号的领导者的情况下，一个节点才会投票赞成提议。
+
+有两轮投票：第一次是为了选出一位领导者，第二次是对领导者的提议进行表决。
+
+- 这两次投票的 **法定人群** 必须相互 **重叠（overlap）**
+- 如果一个提案的表决通过，则至少得有一个参与投票的节点也必须参加过最近的领导者选举【105】
+
+因此，如果在一个提案的表决过程中没有出现更高的纪元编号。那么现任领导者就可以得出这样的结论：没有发生过更高时代的领导选举，因此可以确定自己仍然在领导。然后它就可以安全地对提议值做出决定。
+
+这一投票过程表面上看起来很像两阶段提交。最大的区别在于：
+
+- 2PC 中协调者不是由选举产生的，而且 2PC 则要求 **所有** 参与者都投赞成票，而容错共识算法只需要多数节点的投票。
+- 共识算法还定义了一个恢复过程，节点可以在选举出新的领导者之后进入一个一致的状态，确保始终能满足安全属性。
+
+#### 共识的局限性
+
+共识算法为其他充满不确定性的系统带来了基础的安全属性（一致同意，完整性和有效性），还能保持容错。
+
+- 供了全序广播，因此它们也可以以一种容错的方式实现线性一致的原子操作。
+
+节点在做出决定之前对**提议进行投票的过程是一种同步复制**。
+
+共识系统总是需要严格多数来运转。至少需要三个节点才能容忍单节点故障。
+
+大多数共识算法假定参与投票的节点是固定的集合，这意味着你不能简单的在集群中添加或删除节点。共识算法的 **动态成员扩展（dynamic membership extension）** 允许集群中的节点集随时间推移而变化，但是它们比静态成员算法要难理解得多。
+
+共识系统通常依靠**超时**来检测失效的节点。特别是在地理上散布的系统中，经常发生一个节点由于暂时的网络问题，错误地认为领导者已经失效。虽然这种错误不会损害安全属性，但频繁的领导者选举会导致糟糕的性能表现。
+
+有时共识算法对网络问题特别敏感：
+
+- 如 Raft 已被证明存在让人不悦的极端情况【106】：如果整个网络工作正常，但只有一条特定的网络连接一直不可靠，Raft 可能会进入领导者在两个节点间频繁切换的局面，或者当前领导者不断被迫辞职以致系统实质上毫无进展。
+- 其他一致性算法也存在类似的问题，而设计能健壮应对不可靠网络的算法仍然是一个开放的研究问题。
+
+### 成员与协调服务
+
+像 ZooKeeper 或 etcd 这样的项目通常被描述为 “分布式键值存储” 或 “协调与配置服务”。这种服务的 API 看起来非常像数据库：你可以读写给定键的值，并遍历键。为什么它们要把工夫全花在实现一个共识算法上呢？是什么使它们区别于其他任意类型的数据库？
+
+ZooKeeper 实际上不适合当成通用数据库来用，通过其他项目间接依赖它，例如 HBase、Hadoop YARN、OpenStack Nova 和 Kafka 都依赖 ZooKeeper 在后台运行。
+
+ZooKeeper 和 etcd 被设计为容纳少量完全可以放在内存中的数据（虽然它们仍然会写入磁盘以保证持久性）
+
+- 不会想着把所有应用数据放到这里，少量数据会通过容错的全序广播算法复制到所有节点上；
+
+ZooKeeper 模仿了 Google 的 Chubby 锁服务【14,98】，不仅实现了全序广播（因此也实现了共识），而且还构建了一组有趣的其他特性：
+
+- 线性一致性的原子操作：使用原子 CAS 操作可以实现锁，共识协议保证了操作的原子性和线性一致性
+  - 分布式锁通常以 **租约（lease）** 的形式实现，租约有一个到期时间，以便在客户端失效的情况下最终能被释放（请参阅 “[进程暂停](./8_trouble_in_distributed_system.md#进程暂停)”）。
+- 操作的全序排序：当某个资源受到锁或租约的保护时，需要一个防护令牌来防止客户端在进程暂停的情况下彼此冲突。防护令牌是每次锁被获取时单调增加的数字。
+  - ZooKeeper 通过全序化所有操作来提供这个功能，它为每个操作提供一个单调递增的事务 ID（`zxid`）和版本号（`cversion`）【15】
+- 失效检测：客户端和服务器周期性地交换心跳包来检查节点是否还活着
+  - 即使连接暂时中断，或者 ZooKeeper 节点失效，会话仍保持在活跃状态。但如果心跳停止的持续时间超出会话超时，ZooKeeper 会宣告该会话已死亡。当会话超时时（ZooKeeper 称这些节点为 **临时节点**，即 ephemeral nodes），会话持有的任何锁都可以配置为自动释放。
+- 变更通知：客户端不仅可以读取其他客户端创建的锁和值，还可以监听它们的变更。
+  - 客户端可以知道另一个客户端何时加入集群（基于新客户端写入 ZooKeeper 的值），或发生故障（因其会话超时，而其临时节点消失）。
+
+在这些功能中，只有线性一致的原子操作才真的需要共识。是这些功能的组合，使得像 ZooKeeper 这样的系统在分布式协调中非常有用。
+
+#### 将工作分配给节点
+
+ZooKeeper/Chubby 模型运行良好的例子：
+
+- 有几个进程实例或服务，需要选择其中一个实例作为主库或首选服务。如果领导者失败，其他节点之一应该接管。
+- 有一些分区资源（数据库、消息流、文件存储、分布式 Actor 系统等），并需要决定将哪个分区分配给哪个节点时。包括新节点加入和移除/失效时的重新负载平衡。
+
+这类任务可以通过在 ZooKeeper 中明智地使用原子操作，临时节点与通知来实现。允许应用自动从故障中恢复而无需人工干预。
+
+- 不少在 ZooKeeper 客户端 API 基础之上提供更高层工具的库，例如 Apache Curator 【17】；
+- 从头实现必要的共识算法的尝试鲜有成功记录【107】。
+
+应用最初只能在单个节点上运行，但最终可能会增长到数千个节点。试图在如此之多的节点上进行多数投票将是非常低效的。
+
+ZooKeeper 在固定数量的节点（通常是三到五个）上运行，并在这些节点之间执行其多数票，同时支持**潜在的大量客户端**。提供了一种将协调节点（共识，操作排序和故障检测）的一些工作 “外包” 到外部服务的方式。
+
+通常，由 ZooKeeper 管理的数据类型的变化十分缓慢：代表 “分区 7 中的节点运行在 `10.1.1.23` 上” 的信息可能会在几分钟或几小时的时间内发生变化。它**不是用来存储应用的运行时状态**的，后者每秒可能会改变数千甚至数百万次。如果应用状态需要从一个节点复制到另一个节点，则可以使用其他工具（如 Apache BookKeeper 【108】）。
+
+#### 服务发现
+
+ZooKeeper、etcd 和 Consul 也经常用于服务发现：配置你的服务，使其在启动时注册服务注册表中的网络端点，然后可以由其他服务找到它们。
+
+服务发现是否需要达成共识还不太清楚。DNS 是查找服务名称的 IP 地址的传统方式，它使用多层缓存来实现良好的性能和可用性。从 DNS 读取是绝对不线性一致性的，如果 DNS 查询的结果有点陈旧，通常不会有问题【109】。DNS 的可用性和对网络中断的鲁棒性更重要。
+
+尽管服务发现并不需要共识，但领导者选举却需要：
+
+- 如果你的共识系统已经知道领导是谁，那么也可以使用这些信息来帮助其他服务发现领导是谁；
+- 为此，一些共识系统支持只读缓存副本，异步接收共识算法所有决策的日志，但不主动参与投票。提供不需要线性一致性的读取请求。
+
+#### 成员资格服务
+
+ZooKeeper 和它的小伙伴们可以看作是成员资格服务（membership services）研究的悠久历史的一部分，这个历史可以追溯到 20 世纪 80 年代，并且对建立高度可靠的系统（例如空中交通管制）非常重要【110】。
+
+- 成员资格服务确定哪些节点当前处于活动状态并且是集群的活动成员；
+- 由于无限的网络延迟，无法可靠地检测到另一个节点是否发生故障；
+- 如果通过共识来进行故障检测，那么节点可以就哪些节点应该被认为是存在或不存在达成一致。
+
+即使它确实存在，仍然可能发生一个节点被共识错误地宣告死亡。但是对于一个系统来说，知道哪些节点构成了当前的成员关系是非常有用的：
+
+- 选择领导者可能意味着简单地选择当前成员中编号最小的成员，但如果不同的节点对现有的成员都有谁有不同意见，则这种方法将不起作用。
 
 
 
 [^1]: 严格地说，ZooKeeper 和 etcd 提供线性一致性的写操作，但读取可能是陈旧的，因为默认情况下，它们可以由任何一个副本提供服务。你可以选择请求线性一致性读取：etcd 称之为 **法定人数读取（quorum read）**【16】，而在 ZooKeeper 中，你需要在读取之前调用 `sync()`【15】。请参阅 “[使用全序广播实现线性一致的存储](./9_consistency_consensus.md#使用全序广播实现线性一致的存储)”。
 [^2]: 对单主数据库进行分区（分片），使得每个分区有一个单独的领导者，不会影响线性一致性，因为线性一致性只是对单一对象的保证。交叉分区事务是一个不同的问题（请参阅 “[分布式事务与共识](./9_consistency_consensus.md#分布式事务与共识)”）
+[^7]: 设 R 为非空集合 A 上的关系，如果 R 是自反的、反对称的和可传递的，则称 R 为 A 上的偏序关系。简称偏序，通常记作≦。一个集合 A 与 A 上的偏序关系 R 一起叫作偏序集，记作 $(A,R)$ 或 $(A, ≦)$。全序、偏序、关系、集合，这些概念的精确定义可以参考任意一本离散数学教材。
+[^8]: 与因果关系不一致的全序很容易创建，但没啥用。例如你可以为每个操作生成随机的 UUID，并按照字典序比较 UUID，以定义操作的全序。这是一个有效的全序，但是随机的 UUID 并不能告诉你哪个操作先发生，或者操作是否为并发的。
+[^9]: “原子广播” 是一个传统的术语，非常混乱，而且与 “原子” 一词的其他用法不一致：它与 ACID 事务中的原子性没有任何关系，只是与原子操作（在多线程编程的意义上 ）或原子寄存器（线性一致存储）有间接的联系。全序组播（total order multicast）是另一个同义词。
+[^10]: 从形式上讲，线性一致读写寄存器是一个 “更容易” 的问题。全序广播等价于共识【67】，而共识问题在异步的崩溃 - 停止模型【68】中没有确定性的解决方案，而线性一致的读写寄存器 **可以** 在这种模型中实现【23,24,25】。然而，支持诸如 **比较并设置（CAS, compare-and-set）**，或 **自增并返回（increment-and-get）** 的原子操作使它等价于共识问题【28】。因此，共识问题与线性一致寄存器问题密切相关。
+[^11]: 如果你不等待，而是在消息入队之后立即确认写入，则会得到类似于多核 x86 处理器内存的一致性模型【43】。该模型既不是线性一致的也不是顺序一致的。
+
+[^12]:原子提交的形式化与共识稍有不同：原子事务只有在 **所有** 参与者投票提交的情况下才能提交，如果有任何参与者需要中止，则必须中止。共识则允许就 **任意一个** 被参与者提出的候选值达成一致。然而，原子提交和共识可以相互简化为对方【70,71】。**非阻塞** 原子提交则要比共识更为困难 —— 请参阅 “[三阶段提交](#三阶段提交)”
+
+[^13]:这种共识的特殊形式被称为 **统一共识（uniform consensus）**，相当于在具有不可靠故障检测器的异步系统中的 **常规共识（regular consensus）**【71】。学术文献通常指的是 **进程（process）** 而不是节点，但我们在这里使用 **节点（node）** 来与本书的其余部分保持一致。
+
+
+
+## 参考文献
+
+1. Peter Bailis and Ali Ghodsi: “[Eventual Consistency Today: Limitations, Extensions, and Beyond](http://queue.acm.org/detail.cfm?id=2462076),” *ACM Queue*, volume 11, number 3, pages 55-63, March 2013. [doi:10.1145/2460276.2462076](http://dx.doi.org/10.1145/2460276.2462076)
+2. Prince Mahajan, Lorenzo Alvisi, and Mike Dahlin: “[Consistency, Availability, and Convergence](http://apps.cs.utexas.edu/tech_reports/reports/tr/TR-2036.pdf),” University of Texas at Austin, Department of Computer Science, Tech Report UTCS TR-11-22, May 2011.
+3. Alex Scotti: “[Adventures in Building Your Own Database](http://www.slideshare.net/AlexScotti1/allyourbase-55212398),” at *All Your Base*, November 2015.
+4. Peter Bailis, Aaron Davidson, Alan Fekete, et al.: “[Highly Available Transactions: Virtues and Limitations](http://arxiv.org/pdf/1302.0309.pdf),” at *40th International Conference on Very Large Data Bases* (VLDB), September 2014. Extended version published as pre-print arXiv:1302.0309 [cs.DB].
+5. Paolo Viotti and Marko Vukolić: “[Consistency in Non-Transactional Distributed Storage Systems](http://arxiv.org/abs/1512.00168),” arXiv:1512.00168, 12 April 2016.
+6. Maurice P. Herlihy and Jeannette M. Wing: “[Linearizability: A Correctness Condition for Concurrent Objects](http://cs.brown.edu/~mph/HerlihyW90/p463-herlihy.pdf),” *ACM Transactions on Programming Languages and Systems* (TOPLAS), volume 12, number 3, pages 463–492, July 1990. [doi:10.1145/78969.78972](http://dx.doi.org/10.1145/78969.78972)
+7. Leslie Lamport: “[On interprocess communication](http://research.microsoft.com/en-us/um/people/lamport/pubs/interprocess.pdf),” *Distributed Computing*, volume 1, number 2, pages 77–101, June 1986. [doi:10.1007/BF01786228](http://dx.doi.org/10.1007/BF01786228)
+8. David K. Gifford: “[Information Storage in a Decentralized Computer System](http://www.mirrorservice.org/sites/www.bitsavers.org/pdf/xerox/parc/techReports/CSL-81-8_Information_Storage_in_a_Decentralized_Computer_System.pdf),” Xerox Palo Alto Research Centers, CSL-81-8, June 1981.
+9. Martin Kleppmann: “[Please Stop Calling Databases CP or AP](http://martin.kleppmann.com/2015/05/11/please-stop-calling-databases-cp-or-ap.html),” *martin.kleppmann.com*, May 11, 2015.
+10. Kyle Kingsbury: “[Call Me Maybe: MongoDB Stale Reads](https://aphyr.com/posts/322-call-me-maybe-mongodb-stale-reads),” *aphyr.com*, April 20, 2015.
+11. Kyle Kingsbury: “[Computational Techniques in Knossos](https://aphyr.com/posts/314-computational-techniques-in-knossos),” *aphyr.com*, May 17, 2014.
+12. Peter Bailis: “[Linearizability Versus Serializability](http://www.bailis.org/blog/linearizability-versus-serializability/),” *bailis.org*, September 24, 2014.
+13. Philip A. Bernstein, Vassos Hadzilacos, and Nathan Goodman: [*Concurrency Control and Recovery in Database Systems*](http://research.microsoft.com/en-us/people/philbe/ccontrol.aspx). Addison-Wesley, 1987. ISBN: 978-0-201-10715-9, available online at *research.microsoft.com*.
+14. Mike Burrows: “[The Chubby Lock Service for Loosely-Coupled Distributed Systems](http://research.google.com/archive/chubby.html),” at *7th USENIX Symposium on Operating System Design and Implementation* (OSDI), November 2006.
+15. Flavio P. Junqueira and Benjamin Reed: *ZooKeeper: Distributed Process Coordination*. O'Reilly Media, 2013. ISBN: 978-1-449-36130-3
+16. “[etcd 2.0.12 Documentation](https://coreos.com/etcd/docs/2.0.12/),” CoreOS, Inc., 2015.
+17. “[Apache Curator](http://curator.apache.org/),” Apache Software Foundation, *curator.apache.org*, 2015.
+18. Morali Vallath: *Oracle 10g RAC Grid, Services & Clustering*. Elsevier Digital Press, 2006. ISBN: 978-1-555-58321-7
+19. Peter Bailis, Alan Fekete, Michael J Franklin, et al.: “[Coordination-Avoiding Database Systems](http://arxiv.org/pdf/1402.2237.pdf),” *Proceedings of the VLDB Endowment*, volume 8, number 3, pages 185–196, November 2014.
+20. Kyle Kingsbury: “[Call Me Maybe: etcd and Consul](https://aphyr.com/posts/316-call-me-maybe-etcd-and-consul),” *aphyr.com*, June 9, 2014.
+21. Flavio P. Junqueira, Benjamin C. Reed, and Marco Serafini: “[Zab: High-Performance Broadcast for Primary-Backup Systems](https://pdfs.semanticscholar.org/b02c/6b00bd5dbdbd951fddb00b906c82fa80f0b3.pdf),” at *41st IEEE International Conference on Dependable Systems and Networks* (DSN), June 2011. [doi:10.1109/DSN.2011.5958223](http://dx.doi.org/10.1109/DSN.2011.5958223)
+22. Diego Ongaro and John K. Ousterhout: “[In Search of an Understandable Consensus Algorithm (Extended Version)](http://ramcloud.stanford.edu/raft.pdf),” at *USENIX Annual Technical Conference* (ATC), June 2014.
+23. Hagit Attiya, Amotz Bar-Noy, and Danny Dolev: “[Sharing Memory Robustly in Message-Passing Systems](http://www.cse.huji.ac.il/course/2004/dist/p124-attiya.pdf),” *Journal of the ACM*, volume 42, number 1, pages 124–142, January 1995. [doi:10.1145/200836.200869](http://dx.doi.org/10.1145/200836.200869)
+24. Nancy Lynch and Alex Shvartsman: “[Robust Emulation of Shared Memory Using Dynamic Quorum-Acknowledged Broadcasts](http://groups.csail.mit.edu/tds/papers/Lynch/FTCS97.pdf),” at *27th Annual International Symposium on Fault-Tolerant Computing* (FTCS), June 1997. [doi:10.1109/FTCS.1997.614100](http://dx.doi.org/10.1109/FTCS.1997.614100)
+25. Christian Cachin, Rachid Guerraoui, and Luís Rodrigues: [*Introduction to Reliable and Secure Distributed Programming*](http://www.distributedprogramming.net/), 2nd edition. Springer, 2011. ISBN: 978-3-642-15259-7, [doi:10.1007/978-3-642-15260-3](http://dx.doi.org/10.1007/978-3-642-15260-3)
+26. Sam Elliott, Mark Allen, and Martin Kleppmann: [personal communication](https://twitter.com/lenary/status/654761711933648896), thread on *twitter.com*, October 15, 2015.
+27. Niklas Ekström, Mikhail Panchenko, and Jonathan Ellis: “[Possible Issue with Read Repair?](http://mail-archives.apache.org/mod_mbox/cassandra-dev/201210.mbox/),” email thread on *cassandra-dev* mailing list, October 2012.
+28. Maurice P. Herlihy: “[Wait-Free Synchronization](https://cs.brown.edu/~mph/Herlihy91/p124-herlihy.pdf),” *ACM Transactions on Programming Languages and Systems* (TOPLAS), volume 13, number 1, pages 124–149, January 1991. [doi:10.1145/114005.102808](http://dx.doi.org/10.1145/114005.102808)
+29. Armando Fox and Eric A. Brewer: “[Harvest, Yield, and Scalable Tolerant Systems](http://radlab.cs.berkeley.edu/people/fox/static/pubs/pdf/c18.pdf),” at *7th Workshop on Hot Topics in Operating Systems* (HotOS), March 1999. [doi:10.1109/HOTOS.1999.798396](http://dx.doi.org/10.1109/HOTOS.1999.798396)
+30. Seth Gilbert and Nancy Lynch: “[Brewer’s Conjecture and the Feasibility of Consistent, Available, Partition-Tolerant Web Services](http://www.comp.nus.edu.sg/~gilbert/pubs/BrewersConjecture-SigAct.pdf),” *ACM SIGACT News*, volume 33, number 2, pages 51–59, June 2002. [doi:10.1145/564585.564601](http://dx.doi.org/10.1145/564585.564601)
+31. Seth Gilbert and Nancy Lynch: “[Perspectives on the CAP Theorem](http://groups.csail.mit.edu/tds/papers/Gilbert/Brewer2.pdf),” *IEEE Computer Magazine*, volume 45, number 2, pages 30–36, February 2012. [doi:10.1109/MC.2011.389](http://dx.doi.org/10.1109/MC.2011.389)
+32. Eric A. Brewer: “[CAP Twelve Years Later: How the 'Rules' Have Changed](http://cs609.cs.ua.edu/CAP12.pdf),” *IEEE Computer Magazine*, volume 45, number 2, pages 23–29, February 2012. [doi:10.1109/MC.2012.37](http://dx.doi.org/10.1109/MC.2012.37)
+33. Susan B. Davidson, Hector Garcia-Molina, and Dale Skeen: “[Consistency in Partitioned Networks](http://delab.csd.auth.gr/~dimitris/courses/mpc_fall05/papers/invalidation/acm_csur85_partitioned_network_consistency.pdf),” *ACM Computing Surveys*, volume 17, number 3, pages 341–370, September 1985. [doi:10.1145/5505.5508](http://dx.doi.org/10.1145/5505.5508)
+34. Paul R. Johnson and Robert H. Thomas: “[RFC 677: The Maintenance of Duplicate Databases](https://tools.ietf.org/html/rfc677),” Network Working Group, January 27, 1975.
+35. Bruce G. Lindsay, Patricia Griffiths Selinger, C. Galtieri, et al.: “[Notes on Distributed Databases](http://domino.research.ibm.com/library/cyberdig.nsf/papers/A776EC17FC2FCE73852579F100578964/$File/RJ2571.pdf),” IBM Research, Research Report RJ2571(33471), July 1979.
+36. Michael J. Fischer and Alan Michael: “[Sacrificing Serializability to Attain High Availability of Data in an Unreliable Network](http://www.cs.ucsb.edu/~agrawal/spring2011/ugrad/p70-fischer.pdf),” at *1st ACM Symposium on Principles of Database Systems* (PODS), March 1982. [doi:10.1145/588111.588124](http://dx.doi.org/10.1145/588111.588124)
+37. Eric A. Brewer: “[NoSQL: Past, Present, Future](http://www.infoq.com/presentations/NoSQL-History),” at *QCon San Francisco*, November 2012.
+38. Henry Robinson: “[CAP Confusion: Problems with 'Partition Tolerance,'](http://blog.cloudera.com/blog/2010/04/cap-confusion-problems-with-partition-tolerance/)” *blog.cloudera.com*, April 26, 2010.
+39. Adrian Cockcroft: “[Migrating to Microservices](http://www.infoq.com/presentations/migration-cloud-native),” at *QCon London*, March 2014.
+40. Martin Kleppmann: “[A Critique of the CAP Theorem](http://arxiv.org/abs/1509.05393),” arXiv:1509.05393, September 17, 2015.
+41. Nancy A. Lynch: “[A Hundred Impossibility Proofs for Distributed Computing](http://groups.csail.mit.edu/tds/papers/Lynch/podc89.pdf),” at *8th ACM Symposium on Principles of Distributed Computing* (PODC), August 1989. [doi:10.1145/72981.72982](http://dx.doi.org/10.1145/72981.72982)
+42. Hagit Attiya, Faith Ellen, and Adam Morrison: “[Limitations of Highly-Available Eventually-Consistent Data Stores](http://www.cs.technion.ac.il/people/mad/online-publications/podc2015-replds.pdf),” at *ACM Symposium on Principles of Distributed Computing* (PODC), July 2015. doi:10.1145/2767386.2767419](http://dx.doi.org/10.1145/2767386.2767419)
+43. Peter Sewell, Susmit Sarkar, Scott Owens, et al.: “[x86-TSO: A Rigorous and Usable Programmer's Model for x86 Multiprocessors](http://www.cl.cam.ac.uk/~pes20/weakmemory/cacm.pdf),” *Communications of the ACM*, volume 53, number 7, pages 89–97, July 2010. [doi:10.1145/1785414.1785443](http://dx.doi.org/10.1145/1785414.1785443)
+44. Martin Thompson: “[Memory Barriers/Fences](http://mechanical-sympathy.blogspot.co.uk/2011/07/memory-barriersfences.html),” *mechanical-sympathy.blogspot.co.uk*, July 24, 2011.
+45. Ulrich Drepper: “[What Every Programmer Should Know About Memory](http://www.akkadia.org/drepper/cpumemory.pdf),” *akkadia.org*, November 21, 2007.
+46. Daniel J. Abadi: “[Consistency Tradeoffs in Modern Distributed Database System Design](http://cs-www.cs.yale.edu/homes/dna/papers/abadi-pacelc.pdf),” *IEEE Computer Magazine*, volume 45, number 2, pages 37–42, February 2012. [doi:10.1109/MC.2012.33](http://dx.doi.org/10.1109/MC.2012.33)
+47. Hagit Attiya and Jennifer L. Welch: “[Sequential Consistency Versus Linearizability](http://courses.csail.mit.edu/6.852/01/papers/p91-attiya.pdf),” *ACM Transactions on Computer Systems* (TOCS), volume 12, number 2, pages 91–122, May 1994. [doi:10.1145/176575.176576](http://dx.doi.org/10.1145/176575.176576)
+48. Mustaque Ahamad, Gil Neiger, James E. Burns, et al.: “[Causal Memory: Definitions, Implementation, and Programming](http://www-i2.informatik.rwth-aachen.de/i2/fileadmin/user_upload/documents/Seminar_MCMM11/Causal_memory_1996.pdf),” *Distributed Computing*, volume 9, number 1, pages 37–49, March 1995. [doi:10.1007/BF01784241](http://dx.doi.org/10.1007/BF01784241)
+49. Wyatt Lloyd, Michael J. Freedman, Michael Kaminsky, and David G. Andersen: “[Stronger Semantics for Low-Latency Geo-Replicated Storage](https://www.usenix.org/system/files/conference/nsdi13/nsdi13-final149.pdf),” at *10th USENIX Symposium on Networked Systems Design and Implementation* (NSDI), April 2013.
+50. Marek Zawirski, Annette Bieniusa, Valter Balegas, et al.: “[SwiftCloud: Fault-Tolerant Geo-Replication Integrated All the Way to the Client Machine](http://arxiv.org/abs/1310.3107),” INRIA Research Report 8347, August 2013.
+51. Peter Bailis, Ali Ghodsi, Joseph M Hellerstein, and Ion Stoica: “[Bolt-on Causal Consistency](http://db.cs.berkeley.edu/papers/sigmod13-bolton.pdf),” at *ACM International Conference on Management of Data* (SIGMOD), June 2013.
+52. Philippe Ajoux, Nathan Bronson, Sanjeev Kumar, et al.: “[Challenges to Adopting Stronger Consistency at Scale](https://www.usenix.org/system/files/conference/hotos15/hotos15-paper-ajoux.pdf),” at *15th USENIX Workshop on Hot Topics in Operating Systems* (HotOS), May 2015.
+53. Peter Bailis: “[Causality Is Expensive (and What to Do About It)](http://www.bailis.org/blog/causality-is-expensive-and-what-to-do-about-it/),” *bailis.org*, February 5, 2014.
+54. Ricardo Gonçalves, Paulo Sérgio Almeida, Carlos Baquero, and Victor Fonte: “[Concise Server-Wide Causality Management for Eventually Consistent Data Stores](http://haslab.uminho.pt/tome/files/global_logical_clocks.pdf),” at *15th IFIP International Conference on Distributed Applications and Interoperable Systems* (DAIS), June 2015. [doi:10.1007/978-3-319-19129-4_6](http://dx.doi.org/10.1007/978-3-319-19129-4_6)
+55. Rob Conery: “[A Better ID Generator for PostgreSQL](http://rob.conery.io/2014/05/29/a-better-id-generator-for-postgresql/),” *rob.conery.io*, May 29, 2014.
+56. Leslie Lamport: “[Time, Clocks, and the Ordering of Events in a Distributed System](http://research.microsoft.com/en-US/um/people/Lamport/pubs/time-clocks.pdf),” *Communications of the ACM*, volume 21, number 7, pages 558–565, July 1978. [doi:10.1145/359545.359563](http://dx.doi.org/10.1145/359545.359563)
+57. Xavier Défago, André Schiper, and Péter Urbán: “[Total Order Broadcast and Multicast Algorithms: Taxonomy and Survey](https://dspace.jaist.ac.jp/dspace/bitstream/10119/4883/1/defago_et_al.pdf),” *ACM Computing Surveys*, volume 36, number 4, pages 372–421, December 2004. [doi:10.1145/1041680.1041682](http://dx.doi.org/10.1145/1041680.1041682)
+58. Hagit Attiya and Jennifer Welch: *Distributed Computing: Fundamentals, Simulations and Advanced Topics*, 2nd edition. John Wiley & Sons, 2004. ISBN: 978-0-471-45324-6, [doi:10.1002/0471478210](http://dx.doi.org/10.1002/0471478210)
+59. Mahesh Balakrishnan, Dahlia Malkhi, Vijayan Prabhakaran, et al.: “[CORFU: A Shared Log Design for Flash Clusters](https://www.usenix.org/system/files/conference/nsdi12/nsdi12-final30.pdf),” at *9th USENIX Symposium on Networked Systems Design and Implementation* (NSDI), April 2012.
+60. Fred B. Schneider: “[Implementing Fault-Tolerant Services Using the State Machine Approach: A Tutorial](http://www.cs.cornell.edu/fbs/publications/smsurvey.pdf),” *ACM Computing Surveys*, volume 22, number 4, pages 299–319, December 1990.
+61. Alexander Thomson, Thaddeus Diamond, Shu-Chun Weng, et al.: “[Calvin: Fast Distributed Transactions for Partitioned Database Systems](http://cs.yale.edu/homes/thomson/publications/calvin-sigmod12.pdf),” at *ACM International Conference on Management of Data* (SIGMOD), May 2012.
+62. Mahesh Balakrishnan, Dahlia Malkhi, Ted Wobber, et al.: “[Tango: Distributed Data Structures over a Shared Log](http://research.microsoft.com/pubs/199947/Tango.pdf),” at *24th ACM Symposium on Operating Systems Principles* (SOSP), November 2013. [doi:10.1145/2517349.2522732](http://dx.doi.org/10.1145/2517349.2522732)
+63. Robbert van Renesse and Fred B. Schneider: “[Chain Replication for Supporting High Throughput and Availability](http://static.usenix.org/legacy/events/osdi04/tech/full_papers/renesse/renesse.pdf),” at *6th USENIX Symposium on Operating System Design and Implementation* (OSDI), December 2004.
+64. Leslie Lamport: “[How to Make a Multiprocessor Computer That Correctly Executes Multiprocess Programs](http://research-srv.microsoft.com/en-us/um/people/lamport/pubs/multi.pdf),” *IEEE Transactions on Computers*, volume 28, number 9, pages 690–691, September 1979. [doi:10.1109/TC.1979.1675439](http://dx.doi.org/10.1109/TC.1979.1675439)
+65. Enis Söztutar, Devaraj Das, and Carter Shanklin: “[Apache HBase High Availability at the Next Level](http://hortonworks.com/blog/apache-hbase-high-availability-next-level/),” *hortonworks.com*, January 22, 2015.
+66. Brian F Cooper, Raghu Ramakrishnan, Utkarsh Srivastava, et al.: “[PNUTS: Yahoo!’s Hosted Data Serving Platform](http://www.mpi-sws.org/~druschel/courses/ds/papers/cooper-pnuts.pdf),” at *34th International Conference on Very Large Data Bases* (VLDB), August 2008. [doi:10.14778/1454159.1454167](http://dx.doi.org/10.14778/1454159.1454167)
+67. Tushar Deepak Chandra and Sam Toueg: “[Unreliable Failure Detectors for Reliable Distributed Systems](http://courses.csail.mit.edu/6.852/08/papers/CT96-JACM.pdf),” *Journal of the ACM*, volume 43, number 2, pages 225–267, March 1996. [doi:10.1145/226643.226647](http://dx.doi.org/10.1145/226643.226647)
+68. Michael J. Fischer, Nancy Lynch, and Michael S. Paterson: “[Impossibility of Distributed Consensus with One Faulty Process](https://groups.csail.mit.edu/tds/papers/Lynch/jacm85.pdf),” *Journal of the ACM*, volume 32, number 2, pages 374–382, April 1985. [doi:10.1145/3149.214121](http://dx.doi.org/10.1145/3149.214121)
+69. Michael Ben-Or: “Another Advantage of Free Choice: Completely Asynchronous Agreement Protocols,” at *2nd ACM Symposium on Principles of Distributed Computing* (PODC), August 1983. [doi:10.1145/800221.806707](http://dl.acm.org/citation.cfm?id=806707)
+70. Jim N. Gray and Leslie Lamport: “[Consensus on Transaction Commit](http://db.cs.berkeley.edu/cs286/papers/paxoscommit-tods2006.pdf),” *ACM Transactions on Database Systems* (TODS), volume 31, number 1, pages 133–160, March 2006. [doi:10.1145/1132863.1132867](http://dx.doi.org/10.1145/1132863.1132867)
+71. Rachid Guerraoui: “[Revisiting the Relationship Between Non-Blocking Atomic Commitment and Consensus](https://pdfs.semanticscholar.org/5d06/489503b6f791aa56d2d7942359c2592e44b0.pdf),” at *9th International Workshop on Distributed Algorithms* (WDAG), September 1995. [doi:10.1007/BFb0022140](http://dx.doi.org/10.1007/BFb0022140)
+72. Thanumalayan Sankaranarayana Pillai, Vijay Chidambaram, Ramnatthan Alagappan, et al.: “[All File Systems Are Not Created Equal: On the Complexity of Crafting Crash-Consistent Applications](http://research.cs.wisc.edu/wind/Publications/alice-osdi14.pdf),” at *11th USENIX Symposium on Operating Systems Design and Implementation* (OSDI), October 2014.
+73. Jim Gray: “[The Transaction Concept: Virtues and Limitations](http://research.microsoft.com/en-us/um/people/gray/papers/theTransactionConcept.pdf),” at *7th International Conference on Very Large Data Bases* (VLDB), September 1981.
+74. Hector Garcia-Molina and Kenneth Salem: “[Sagas](http://www.cs.cornell.edu/andru/cs711/2002fa/reading/sagas.pdf),” at *ACM International Conference on Management of Data* (SIGMOD), May 1987. [doi:10.1145/38713.38742](http://dx.doi.org/10.1145/38713.38742)
+75. C. Mohan, Bruce G. Lindsay, and Ron Obermarck: “[Transaction Management in the R* Distributed Database Management System](https://cs.brown.edu/courses/csci2270/archives/2012/papers/dtxn/p378-mohan.pdf),” *ACM Transactions on Database Systems*, volume 11, number 4, pages 378–396, December 1986. [doi:10.1145/7239.7266](http://dx.doi.org/10.1145/7239.7266)
+76. “[Distributed Transaction Processing: The XA Specification](http://pubs.opengroup.org/onlinepubs/009680699/toc.pdf),” X/Open Company Ltd., Technical Standard XO/CAE/91/300, December 1991. ISBN: 978-1-872-63024-3
+77. Mike Spille: “[XA Exposed, Part II](http://www.jroller.com/pyrasun/entry/xa_exposed_part_ii_schwartz),” *jroller.com*, April 3, 2004.
+78. Ivan Silva Neto and Francisco Reverbel: “[Lessons Learned from Implementing WS-Coordination and WS-AtomicTransaction](http://www.ime.usp.br/~reverbel/papers/icis2008.pdf),” at *7th IEEE/ACIS International Conference on Computer and Information Science* (ICIS), May 2008. [doi:10.1109/ICIS.2008.75](http://dx.doi.org/10.1109/ICIS.2008.75)
+79. James E. Johnson, David E. Langworthy, Leslie Lamport, and Friedrich H. Vogt: “[Formal Specification of a Web Services Protocol](http://research.microsoft.com/en-us/um/people/lamport/pubs/wsfm-web.pdf),” at *1st International Workshop on Web Services and Formal Methods* (WS-FM), February 2004. [doi:10.1016/j.entcs.2004.02.022](http://dx.doi.org/10.1016/j.entcs.2004.02.022)
+80. Dale Skeen: “[Nonblocking Commit Protocols](http://www.cs.utexas.edu/~lorenzo/corsi/cs380d/papers/Ske81.pdf),” at *ACM International Conference on Management of Data* (SIGMOD), April 1981. [doi:10.1145/582318.582339](http://dx.doi.org/10.1145/582318.582339)
+81. Gregor Hohpe: “[Your Coffee Shop Doesn’t Use Two-Phase Commit](http://www.martinfowler.com/ieeeSoftware/coffeeShop.pdf),” *IEEE Software*, volume 22, number 2, pages 64–66, March 2005. [doi:10.1109/MS.2005.52](http://dx.doi.org/10.1109/MS.2005.52)
+82. Pat Helland: “[Life Beyond Distributed Transactions: An Apostate’s Opinion](http://www-db.cs.wisc.edu/cidr/cidr2007/papers/cidr07p15.pdf),” at *3rd Biennial Conference on Innovative Data Systems Research* (CIDR), January 2007.
+83. Jonathan Oliver: “[My Beef with MSDTC and Two-Phase Commits](http://blog.jonathanoliver.com/my-beef-with-msdtc-and-two-phase-commits/),” *blog.jonathanoliver.com*, April 4, 2011.
+84. Oren Eini (Ahende Rahien): “[The Fallacy of Distributed Transactions](http://ayende.com/blog/167362/the-fallacy-of-distributed-transactions),” *ayende.com*, July 17, 2014.
+85. Clemens Vasters: “[Transactions in Windows Azure (with Service Bus) – An Email Discussion](https://blogs.msdn.microsoft.com/clemensv/2012/07/30/transactions-in-windows-azure-with-service-bus-an-email-discussion/),” *vasters.com*, July 30, 2012.
+86. “[Understanding Transactionality in Azure](https://docs.particular.net/nservicebus/azure/understanding-transactionality-in-azure),” NServiceBus Documentation, Particular Software, 2015.
+87. Randy Wigginton, Ryan Lowe, Marcos Albe, and Fernando Ipar: “[Distributed Transactions in MySQL](https://www.percona.com/live/mysql-conference-2013/sites/default/files/slides/XA_final.pdf),” at *MySQL Conference and Expo*, April 2013.
+88. Mike Spille: “[XA Exposed, Part I](http://www.jroller.com/pyrasun/entry/xa_exposed),” *jroller.com*, April 3, 2004.
+89. Ajmer Dhariwal: “[Orphaned MSDTC Transactions (-2 spids)](http://www.eraofdata.com/orphaned-msdtc-transactions-2-spids/),” *eraofdata.com*, December 12, 2008.
+90. Paul Randal: “[Real World Story of DBCC PAGE Saving the Day](http://www.sqlskills.com/blogs/paul/real-world-story-of-dbcc-page-saving-the-day/),” *sqlskills.com*, June 19, 2013.
+91. “[in-doubt xact resolution Server Configuration Option](https://msdn.microsoft.com/en-us/library/ms179586.aspx),” SQL Server 2016 documentation, Microsoft, Inc., 2016.
+92. Cynthia Dwork, Nancy Lynch, and Larry Stockmeyer: “[Consensus in the Presence of Partial Synchrony](http://www.net.t-labs.tu-berlin.de/~petr/ADC-07/papers/DLS88.pdf),” *Journal of the ACM*, volume 35, number 2, pages 288–323, April 1988. [doi:10.1145/42282.42283](http://dx.doi.org/10.1145/42282.42283)
+93. Miguel Castro and Barbara H. Liskov: “[Practical Byzantine Fault Tolerance and Proactive Recovery](http://zoo.cs.yale.edu/classes/cs426/2012/bib/castro02practical.pdf),” *ACM Transactions on Computer Systems*, volume 20, number 4, pages 396–461, November 2002. [doi:10.1145/571637.571640](http://dx.doi.org/10.1145/571637.571640)
+94. Brian M. Oki and Barbara H. Liskov: “[Viewstamped Replication: A New Primary Copy Method to Support Highly-Available Distributed Systems](http://www.cs.princeton.edu/courses/archive/fall11/cos518/papers/viewstamped.pdf),” at *7th ACM Symposium on Principles of Distributed Computing* (PODC), August 1988. [doi:10.1145/62546.62549](http://dx.doi.org/10.1145/62546.62549)
+95. Barbara H. Liskov and James Cowling: “[Viewstamped Replication Revisited](http://pmg.csail.mit.edu/papers/vr-revisited.pdf),” Massachusetts Institute of Technology, Tech Report MIT-CSAIL-TR-2012-021, July 2012.
+96. Leslie Lamport: “[The Part-Time Parliament](http://research.microsoft.com/en-us/um/people/lamport/pubs/lamport-paxos.pdf),” *ACM Transactions on Computer Systems*, volume 16, number 2, pages 133–169, May 1998. [doi:10.1145/279227.279229](http://dx.doi.org/10.1145/279227.279229)
+97. Leslie Lamport: “[Paxos Made Simple](http://research.microsoft.com/en-us/um/people/lamport/pubs/paxos-simple.pdf),” *ACM SIGACT News*, volume 32, number 4, pages 51–58, December 2001.
+98. Tushar Deepak Chandra, Robert Griesemer, and Joshua Redstone: “[Paxos Made Live – An Engineering Perspective](http://www.read.seas.harvard.edu/~kohler/class/08w-dsi/chandra07paxos.pdf),” at *26th ACM Symposium on Principles of Distributed Computing* (PODC), June 2007.
+99. Robbert van Renesse: “[Paxos Made Moderately Complex](http://www.cs.cornell.edu/home/rvr/Paxos/paxos.pdf),” *cs.cornell.edu*, March 2011.
+100. Diego Ongaro: “[Consensus: Bridging Theory and Practice](https://github.com/ongardie/dissertation),” PhD Thesis, Stanford University, August 2014.
+101. Heidi Howard, Malte Schwarzkopf, Anil Madhavapeddy, and Jon Crowcroft: “[Raft Refloated: Do We Have Consensus?](http://www.cl.cam.ac.uk/~ms705/pub/papers/2015-osr-raft.pdf),” *ACM SIGOPS Operating Systems Review*, volume 49, number 1, pages 12–21, January 2015. [doi:10.1145/2723872.2723876](http://dx.doi.org/10.1145/2723872.2723876)
+102. André Medeiros: “[ZooKeeper’s Atomic Broadcast Protocol: Theory and Practice](http://www.tcs.hut.fi/Studies/T-79.5001/reports/2012-deSouzaMedeiros.pdf),” Aalto University School of Science, March 20, 2012.
+103. Robbert van Renesse, Nicolas Schiper, and Fred B. Schneider: “[Vive La Différence: Paxos vs. Viewstamped Replication vs. Zab](http://arxiv.org/abs/1309.5671),” *IEEE Transactions on Dependable and Secure Computing*, volume 12, number 4, pages 472–484, September 2014. [doi:10.1109/TDSC.2014.2355848](http://dx.doi.org/10.1109/TDSC.2014.2355848)
+104. Will Portnoy: “[Lessons Learned from Implementing Paxos](http://blog.willportnoy.com/2012/06/lessons-learned-from-paxos.html),” *blog.willportnoy.com*, June 14, 2012.
+105. Heidi Howard, Dahlia Malkhi, and Alexander Spiegelman: “[Flexible Paxos: Quorum Intersection Revisited](https://arxiv.org/abs/1608.06696),” *arXiv:1608.06696*, August 24, 2016.
+106. Heidi Howard and Jon Crowcroft: “[Coracle: Evaluating Consensus at the Internet Edge](http://www.sigcomm.org/sites/default/files/ccr/papers/2015/August/2829988-2790010.pdf),” at *Annual Conference of the ACM Special Interest Group on Data Communication* (SIGCOMM), August 2015. [doi:10.1145/2829988.2790010](http://dx.doi.org/10.1145/2829988.2790010)
+107. Kyle Kingsbury: “[Call Me Maybe: Elasticsearch 1.5.0](https://aphyr.com/posts/323-call-me-maybe-elasticsearch-1-5-0),” *aphyr.com*, April 27, 2015.
+108. Ivan Kelly: “[BookKeeper Tutorial](https://github.com/ivankelly/bookkeeper-tutorial),” *github.com*, October 2014.
+109. Camille Fournier: “[Consensus Systems for the Skeptical Architect](http://www.ustream.tv/recorded/61483409),” at *Craft Conference*, Budapest, Hungary, April 2015.
+110. Kenneth P. Birman: “[A History of the Virtual Synchrony Replication Model](https://www.truststc.org/pubs/713.html),” in *Replication: Theory and Practice*, Springer LNCS volume 5959, chapter 6, pages 91–120, 2010. ISBN: 978-3-642-11293-5, [doi:10.1007/978-3-642-11294-2_6](http://dx.doi.org/10.1007/978-3-642-11294-2_6)
