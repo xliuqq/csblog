@@ -82,7 +82,7 @@ ACID 的原子性并**不**是关于 **并发**，描述如果几个进程试图
 
 - 在 [第五章](./5_replication.md) 中，我们讨论了副本一致性，以及异步复制系统中的最终一致性问题（请参阅 “[复制延迟问题](./5_replication.md#复制延迟问题)”）。
 - [一致性哈希](./6_partitions.md#一致性哈希) 是某些系统用于重新分区的一种分区方法。
-- 在 [CAP 定理](./9_concistency_consensus.md#CAP定理) 中，一致性一词用于表示 [线性一致性](./9_concistency_consensus.md#线性一致性)。
+- 在 [CAP 定理](./9_consistency_consensus.md#CAP定理) 中，一致性一词用于表示 [线性一致性](./9_consistency_consensus.md#线性一致性)。
 - 在 ACID 的上下文中，**一致性** 是指数据库在应用程序的特定概念中处于 “良好状态”。
 
 ACID 一致性的概念是，**对数据的一组特定约束必须始终成立**，即 **不变式（invariants）**。

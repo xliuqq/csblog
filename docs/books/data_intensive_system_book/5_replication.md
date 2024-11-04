@@ -275,7 +275,7 @@ tags:
 
 在走向分布式（复制和分区）数据库时，许多系统放弃了事务，声称事务在性能和可用性上的代价太高，并断言在可伸缩系统中最终一致性是不可避免的。
 
--  [第七章](./7_transaction.md) 和 [第九章](./9_consistency_consensus.md) 回到事务的话题，并将在 [第三部分](./part3_derived data.md) 讨论一些替代机制。
+-  [第七章](./7_transaction.md) 和 [第九章](./9_consistency_consensus.md) 回到事务的话题，并将在 [第三部分](./part3_derived_data.md) 讨论一些替代机制。
 
 ## 多主复制
 
