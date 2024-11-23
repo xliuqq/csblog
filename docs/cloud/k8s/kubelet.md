@@ -1,5 +1,9 @@
 # Kubelet
 
+> 配置文件Yaml格式：[`KubeletConfiguration`](https://kubernetes.io/zh-cn/docs/reference/config-api/kubelet-config.v1beta1/)
+
+
+
 - 宿主机进程：注册到`/etc/systemd/system/kubelet.service`
 
 - `syncFrequency`：默认`1min`，表示在运行中的容器与其配置之间执行同步操作的最长时间间隔；
@@ -13,6 +17,14 @@ Kubernetes中有一种特殊的容器启动方法，称为`Static Pod`，允许�
 kubeadm 创建的 K8s 集群，Master组件的 Yaml 会被生成在`/etc/kubernetes/manifests`路径下：
 
 - `etcd.yaml`、`kube-apiserver.yaml`、`kube-controller-manager.yaml`、`kube-scheduler.yaml`；
+
+
+
+## 配置
+
+### 端口
+
+**10250（kubelet API）**：**kubectl查看pod的日志和cmd命令，都是通过kubelet端口10250访问。**
 
 
 

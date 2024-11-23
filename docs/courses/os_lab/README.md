@@ -20,21 +20,6 @@
 
 > 随堂（课件中的）代码：[OS_LAB_CODE](https://gitee.com/oscsc/oslabcode)
 >
-> 
-
-1.  [操作系统概述](./01-os_introduction.md)
-2.  [应用视角的操作系统](./02-os_appview.md)
-3.  [硬件视角的操作系统](03-os_hardware_view.md)
-4.  [操作系统模型](04-os_python_modeling.md)
-
-
-
-20. [C标准库和实现](./20-c_standard_lib.md)
-21. [可执行文件与加载](./21-22-executable_files_loading.md)
-
-#### 
-
-
 
 
 

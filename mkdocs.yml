@@ -65,22 +65,57 @@ nav:
     - 标签: tags.md
   - 云原生:
     - k8s:
-      - 架构与组件: cloud/k8s/k8s.md
+      - 架构与组件:
+        - 概述: cloud/k8s/k8s.md
+        - kubelet: cloud/k8s/kubelet.md
+      - 对象定义: cloud/k8s/k8s_object.md
+      - 内置资源对象: cloud/k8s/k8s_resource.md
+      - pod原地升级: cloud/k8s/pod_inplace_upgrade.md
+      - 常用配置: cloud/k8s/config.md
+      - 命令使用: cloud/k8s/cmds.md
+      - goclient: cloud/k8s/go_client.md
+      - UI和管理: cloud/k8s/ui_manager.md
+      - 日志架构: cloud/k8s/log_arch.md
+      - 安全机制: cloud/k8s/k8s_security.md
+      - 资源调度:
+        - 调度策略: cloud/k8s/scheduler.md
+        - 调度策略: cloud/k8s/scheduler_plugin.md
+      - CRD:
+        - 概述: cloud/k8s/crd_index.md
+        - kubebuilder: cloud/k8s/crd_kubebuilder.md
+        - JavaOperator: cloud/k8s/crd_java.md
+      - 指标监控: cloud/k8s/metrics.md
+      - 设备插件: cloud/k8s/device_plugin.md
       - 垃圾回收: cloud/k8s/garbage_collect.md
-      - 资源对象: cloud/k8s/k8s-resource.md
+      - Wehhook: cloud/k8s/webhook.md
+      - 网络模型: cloud/k8s/network.md
+      - 存储模型: cloud/k8s/extend_csi.md
+      - 安装部署: 
+        - 部署流程: cloud/k8s/deploy.md
+        - 存储部署: cloud/k8s/deploy_storage.md
+      - 生产注意事项: cloud/k8s/notes.md
+      - 可选发行版: cloud/k8s/release_compare.md
+    - Helm: cloud/helm.md
+    - 项目:
+      - KubeVela: cloud/projects/kubevela.md
   - 书籍:
     - books/index.md
     - 数据密集型系统设计: 
-      - books/data_intensive_system_book/index.md
+      - books/data_intensive_system_book/README.md
       - books/data_intensive_system_book/1_data_system_basic.md
       - books/data_intensive_system_book/2_data_model_query_language.md
       - books/data_intensive_system_book/3_data_store_and_search.md
       - books/data_intensive_system_book/4_encoding_and_evolution.md
+      - books/data_intensive_system_book/part2_distributed_data.md
       - books/data_intensive_system_book/5_replication.md
       - books/data_intensive_system_book/6_partitions.md
       - books/data_intensive_system_book/7_transaction.md
       - books/data_intensive_system_book/8_trouble_in_distributed_system.md
       - books/data_intensive_system_book/9_consistency_consensus.md
+      - books/data_intensive_system_book/part3_derived_data.md
+      - books/data_intensive_system_book/10_batch_processing.md
+      - books/data_intensive_system_book/11_streaming_processing.md
+      - books/data_intensive_system_book/12_the_future.md
   - 算法谜题:
     - algorithmic_puzzles/README.md
   - 编程语言:

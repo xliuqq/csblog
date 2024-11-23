@@ -468,12 +468,13 @@ spec:
 **有状态应用：实例之间关系不对等，或者实例对外部数据有依赖的应用。**（如主从复制的mysql集群）
 
 - StatefulSet控制器直接管理的是Pod，对每个Pod的hostname、名字等都**携带编号**，加以区分；
+- 按序数索引顺序地每次启动一个 Pod。 它一直等到每个 Pod 报告就绪才再启动下一个 Pod；
 - 通过headless service为有编号的Pod，在DNS中生成带有相同编号的DNS记录；
 - 为Pod分配以额相同编号的PVC（Persistent Volume Claim），保证重启后，重新匹配到相同的PVC；
 
 ### 示例（TODO）
 
-见示例[MySQL集群yaml](./)
+见示例[MySQL集群yaml](https://kubernetes.io/zh-cn/docs/tasks/run-application/run-replicated-stateful-application/#statefulset)
 
 ## DaemonSet
 
@@ -1158,15 +1159,86 @@ spec:
 
 
 
+## AutoScale
+
+### HPA/VAP
+
+根据自定义的指标触发扩缩容，案例见[Cache Runtime Auto Scaling | Fluid](https://fluid-cloudnative.github.io/zh/docs/operation-guide/cache-runtime-auto-scaling)
+
+```yaml
+apiVersion: autoscaling/v2beta2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: spark
+spec:
+  # 伸缩对象为AlluxioData，最小副本数为1，最大副本数为4;
+  scaleTargetRef:
+    apiVersion: data.fluid.io/v1alpha1
+    kind: AlluxioRuntime
+    name: spark
+  minReplicas: 1
+  maxReplicas: 4
+  # 根据 custom metrics 触发扩缩容，条件是Dataset对象的缓存数据量占总缓存容量的90%
+  metrics:
+  - type: Object
+    object:
+      metric:
+        name: capacity_used_rate
+      describedObject:
+        apiVersion: data.fluid.io/v1alpha1
+        kind: Dataset
+        name: spark
+      target:
+        type: Value
+        value: "90"
+  behavior:
+    scaleUp:
+      # 一次扩容周期为 10 分钟(periodSeconds),扩容时新增 2 个副本数
+      policies:
+      - type: Pods
+        value: 2
+        periodSeconds: 600
+    scaleDown:
+      selectPolicy: Disabled
+```
+
+### Cron
+
+> https://github.com/AliyunContainerService/kubernetes-cronhpa-controller
+>
+> HPA controller that allows to scale your workload based on time schedule.
+
+定时扩缩容，alibabacloud CRD。
+
+```yaml
+apiVersion: autoscaling.alibabacloud.com/v1beta1
+kind: CronHorizontalPodAutoscaler
+metadata:
+  name: spark
+  namespace: default
+spec:
+  # 描述伸缩的对象
+  scaleTargetRef:
+    apiVersion: data.fluid.io/v1alpha1
+    kind: AlluxioRuntime
+    name: spark
+  excludeDates:
+  # 提供关闭伸缩规则的时间, exclude May 1st
+  - "* * * 1 5 *"
+  jobs:
+  - name: "scale-down"
+    schedule: "0 0 8 ? * 1-6"
+    targetSize: 0
+  - name: "scale-up"
+    schedule: "0 30 21 ? * 1-5"
+    targetSize: 3
+```
+
+
+
+
+
 ## VolumeAttachment 
 
 
-
-
-
-## Operator
-
-> 更灵活、更编程友好的管理“有状态应用”的解决方案。
-
-利用K8s的CRD描述我们想要部署的“有状态应用”，在自定义控制器里根据自定义API对象的变化，完成具体的部署和运维工作。
 

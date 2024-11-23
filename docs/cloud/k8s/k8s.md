@@ -43,7 +43,7 @@
 
 #### kube-scheduler
 
-> 进一步的知识见[K8s调度器](./k8s_scheduler.md)
+> 进一步的知识见[K8s调度器](./scheduler.md)
 
 负责监视新创建的、未指定运行节点（node）的 Pods，选择节点让 Pod 在上面运行。
 
@@ -97,13 +97,38 @@
 
 插件使用 Kubernetes 资源（DaemonSet、Deployment等）实现集群功能。因为这些插件提供集群级别的功能，插件中命名空间域的资源属于 `kube-system` 命名空间。
 
-下面是常用的一些插件，完整的列表见[插件（Addons）](./addons.md)。
+#### 集群层面日志
 
-#### DNS 
+[集群层面日志](./log_arch.md) 机制负责将容器的日志数据保存到一个集中的日志存储中，该存储能够提供搜索和浏览接口。
+
+#### 网络插件
+
+[网络插件](https://kubernetes.io/zh-cn/docs/concepts/extend-kubernetes/compute-storage-net/network-plugins) 是实现容器网络接口（CNI）规范的软件组件。它们负责为 Pod 分配 IP 地址，并使这些 Pod 能在集群内部相互通信。
+
+- [Flannel](https://github.com/flannel-io/flannel#deploying-flannel-manually) 是一个可以用于 Kubernetes 的 overlay 网络提供者。
+
+- [Calico](https://www.tigera.io/project-calico/) 是一个联网和网络策略供应商。 Calico 支持一套灵活的网络选项，包括非覆盖和覆盖网络，带或不带 BGP。 Calico 使用相同的引擎为主机、Pod 和（如果使用 Istio 和 Envoy）应用程序在服务网格层执行网络策略。
+- [Canal](https://projectcalico.docs.tigera.io/getting-started/kubernetes/flannel/flannel) 结合 Flannel 和 Calico，提供联网和网络策略。
+- [Cilium](https://github.com/cilium/cilium) 是一种网络、可观察性和安全解决方案，具有基于 eBPF 的数据平面。 Cilium 提供了简单的 3 层扁平网络， 能够以原生路由（routing）和覆盖/封装（overlay/encapsulation）模式跨越多个集群， 并且可以使用与网络寻址分离的基于身份的安全模型在 L3 至 L7 上实施网络策略。
+
+- [Multus](https://github.com/k8snetworkplumbingwg/multus-cni) 是一个多插件， 可在 Kubernetes 中提供多种网络支持，以支持所有 CNI 插件（例如 Calico、Cilium、Contiv、Flannel）， 而且包含了在 Kubernetes 中基于 SRIOV、DPDK、OVS-DPDK 和 VPP 的工作负载。
+
+- [CNI-Genie](https://github.com/cni-genie/CNI-Genie) 使 Kubernetes 无缝连接到 Calico、Canal、Flannel 或 Weave 等其中一种 CNI 插件。
+
+- [Spiderpool](https://github.com/spidernet-io/spiderpool) 为 Kubernetes 提供了下层网络和 RDMA 高速网络解决方案，兼容裸金属、虚拟机和公有云等运行环境。
+
+#### 服务发现
 
 集群 DNS 是一个 DNS 服务器，和环境中的其他 DNS 服务器一起工作，它为 Kubernetes 服务提供 DNS 记录。
 
+- [CoreDNS](https://coredns.io/) 是一种灵活的，可扩展的 DNS 服务器，可以 [安装](https://github.com/coredns/deployment/tree/master/kubernetes)为集群内的 Pod 提供 DNS 服务。
+
 **Kubernetes 启动的容器自动将此 DNS 服务器包含在其 DNS 搜索列表中。**
+
+#### 基础设施
+
+- [KubeVirt](https://kubevirt.io/user-guide/#/installation/installation) 是可以让 Kubernetes 运行虚拟机的 add-on。通常运行在裸机集群上。
+- [节点问题检测器](https://github.com/kubernetes/node-problem-detector) 在 Linux 节点上运行， 并将系统问题报告为 K8s event 或 node status condition。
 
 #### Web 界面（仪表盘）
 
@@ -113,13 +138,9 @@
 
 [容器资源监控](./metrics.md) 将关于容器的一些常见的时间序列度量值保存到一个集中的数据库中，并提供用于浏览这些数据的界面。
 
-#### 集群层面日志
+#### 插桩
 
-[集群层面日志](./log_arch.md) 机制负责将容器的日志数据保存到一个集中的日志存储中，该存储能够提供搜索和浏览接口。
-
-#### 网络插件
-
-[网络插件](https://kubernetes.io/zh-cn/docs/concepts/extend-kubernetes/compute-storage-net/network-plugins) 是实现容器网络接口（CNI）规范的软件组件。它们负责为 Pod 分配 IP 地址，并使这些 Pod 能在集群内部相互通信。
+- [kube-state-metrics](https://kubernetes.io/zh-cn/docs/concepts/cluster-administration/kube-state-metrics)：侦听Kubernetes API服务器并生成有关对象状态的指标的插件代理。
 
 
 

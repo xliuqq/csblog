@@ -102,8 +102,6 @@ int main(int argc, char *argv[])
 
 - `getopt(man 3 getopt)`库可以处理命令行参数，当然也可以自己解析；
 
-
-
 ### 4.2 获取所有的进程
 
 > ps 命令也是通过 procfs 实现，可以通过 `strace ps`查看系统调用证明。
@@ -114,8 +112,6 @@ Linux 提供了 [procfs](https://en.wikipedia.org/wiki/Procfs)，目录是 `/pro
 
 - 以数字命名的目录，每个目录的名字就是进程号，目录里存储了进程相关的运行时数据。
 - `/proc/[pid]/stat` 文件中包含了其父进程的 pid；
-
-
 
 ### 4.3 建树和打印
 
