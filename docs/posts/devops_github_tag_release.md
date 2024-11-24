@@ -23,8 +23,7 @@ categories:
 
 ## 示例
 
-> 使用 [softprops/action-gh-release: GitHub Action for creating GitHub Releases](https://github.com/softprops/action-gh-release)
->
+> [xliuqq/javaautosshpasswordfree: Java 自动配置免密登录 ](https://github.com/xliuqq/javaautosshpasswordfree) 使用 [softprops/action-gh-release: GitHub Action for creating GitHub Releases](https://github.com/softprops/action-gh-release)
 
 Java 项目为例，Release 时发布 fat jar。
 

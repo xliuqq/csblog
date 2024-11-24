@@ -21,7 +21,6 @@ theme:
     - navigation.top
     - navigation.footer
     - navigation.indexes
-
   language: 'zh'
   icon:
     repo: fontawesome/brands/github
@@ -142,8 +141,36 @@ nav:
       - books/data_intensive_system_book/10_batch_processing.md
       - books/data_intensive_system_book/11_streaming_processing.md
       - books/data_intensive_system_book/12_the_future.md
-  - 算法谜题:
-    - algorithmic_puzzles/README.md
+  - 编程指南:
+    - 设计模式: 
+      - 导览: code_guide/design_pattern/README.md
+      - 创建型模式:
+        - 工厂模式: code_guide/design_pattern/factory.md
+        - 抽象工厂: code_guide/design_pattern/abstract_factory.md
+        - 单例: code_guide/design_pattern/singleton.md
+        - 构造者模式: code_guide/design_pattern/builder.md
+        - 原型模式: code_guide/design_pattern/prototype.md
+      - 结构型模式:
+        - 适配器模式: code_guide/design_pattern/adapter.md
+        - 桥接模式: code_guide/design_pattern/bridge.md
+        - 组合模式: code_guide/design_pattern/composite.md
+        - 装饰模式: code_guide/design_pattern/decorator.md
+        - 外观模式: code_guide/design_pattern/facade.md
+        - 享元模式: code_guide/design_pattern/flyweight.md
+        - 代理模式: code_guide/design_pattern/proxy.md
+      - 行为型模式:
+        - 职责链模式: code_guide/design_pattern/chain.md
+        - 命令模式: code_guide/design_pattern/command.md
+        - 解释器模式: code_guide/design_pattern/interpret.md
+        - 迭代器模式: code_guide/design_pattern/iterator.md
+        - 中介者模式: code_guide/design_pattern/medium.md
+        - 备忘录模式: code_guide/design_pattern/memento.md
+        - 观察者模式: code_guide/design_pattern/observer.md
+        - 状态模式: code_guide/design_pattern/state.md
+        - 策略模式: code_guide/design_pattern/strategy.md
+        - 模板方法: code_guide/design_pattern/template.md
+        - 访问者模式: code_guide/design_pattern/visitor.md
+      - 分布式应用设计模式: code_guide/design_pattern/container_distributed.md
   - 编程语言:
     - Java:
       - Native: 
