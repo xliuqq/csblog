@@ -64,6 +64,16 @@ nav:
     - index.md
     - 标签: tags.md
   - 云原生:
+    - 概述: cloud/README.md
+    - 虚拟化: 
+      - 概述: cloud/virtualize/README.md
+      - proc虚拟化和共享: cloud/virtualize/lxcfs.md
+      - gpu虚拟化: cloud/virtualize/gpu.md
+      - moby(docker): 
+        - 基础: cloud/virtualize/docker.md
+        - 部署配置: cloud/virtualize/docker_deploy.md
+        - 使用: cloud/virtualize/docker_cmds.md
+      - containerd: cloud/virtualize/containerd.md
     - k8s:
       - 架构与组件:
         - 概述: cloud/k8s/k8s.md
@@ -95,9 +105,25 @@ nav:
         - 存储部署: cloud/k8s/deploy_storage.md
       - 生产注意事项: cloud/k8s/notes.md
       - 可选发行版: cloud/k8s/release_compare.md
-    - Helm: cloud/helm.md
+    - 包管理Helm: cloud/helm.md
+    - 镜像仓库Habor: cloud/habor.md
+    - 无服务化:
+      - 概述: cloud/serverless/serverless.md
+      - knative: cloud/serverless/knative.md
+      - openfaas: cloud/serverless/openfaas.md
+    - 常用镜像:
+      - 常用镜像: cloud/images/images.md
+      - 浏览器centos: cloud/images/web_centos.md
+    - 镜像工具: cloud/tools.md
+    - 云边系统:
+      - mqtt协议: cloud/cloud_edge/mqtt.md
+      - openyurt: cloud/cloud_edge/openyurt.md
+      - kubeedge: cloud/cloud_edge/kubeedge.md
     - 项目:
-      - KubeVela: cloud/projects/kubevela.md
+      - vGPU HAMI: cloud/projects/HAMi.md
+      - 数据编排Fluid: cloud/projects/fluid.md
+      - 流量编排Istio: cloud/projects/istio.md
+      - 应用交付KubeVela: cloud/projects/kubevela.md
   - 书籍:
     - books/index.md
     - 数据密集型系统设计: 

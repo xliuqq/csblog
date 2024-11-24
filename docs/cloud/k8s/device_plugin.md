@@ -1,5 +1,9 @@
 # 设备插件
 
+> NVIDIA GPU 设备插件：https://github.com/NVIDIA/k8s-device-plugin
+>
+> AMD GPU 设备插件：https://github.com/ROCm/k8s-device-plugin
+
 v1.26 [stable]：能够新增其它的设备资源（如 GPU/FPGA）等作为资源调度，供 Pod 使用。
 
 
