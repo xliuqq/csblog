@@ -67,7 +67,7 @@ overlay2比overlay更少消耗inode：
 
 ## 资源隔离
 
-基于Linux中的[`Namespace`机制](../../../os/linux/namespace.md)。
+基于Linux中的[`Namespace`机制](../../linux/namespace.md)。
 
 ### 用户（User Namespace）
 
@@ -134,7 +134,7 @@ $ sudo systemctl restart docker.service
 
 > CPU/Memroy 在容器内是看到限制的，还是宿主机的所有信息？
 
-### 基于[`cgroup`](../../../os/linux/cgroup.md)限制
+### 基于[`cgroup`](../../linux/cgroup.md)限制
 
 - Docker daemon 会在单独挂载每一个子系统的控制组目录（如`/sys/fs/cgroup/cpu`）下创建名为docker的控制组；
 - 在docker控制组里，为每个容器创建一个以容器ID为名称的容器控制组，容器内的所有进程号会写到该控制组tasks中，并在控制文件中（如`cpu.cfs_quota_us`写入预设置的值）；

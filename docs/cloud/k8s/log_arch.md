@@ -42,7 +42,7 @@ kubelet 负责轮换容器日志并管理日志目录结构。
 - 在容器中运行的 **kube-scheduler, kube-proxy, kube-apiserver, kube-controller-manager**；
   - 将日志写到 `/var/log` 目录，绕过了默认的日志机制，使用 [klog](https://github.com/kubernetes/community/blob/master/contributors/devel/sig-instrumentation/logging.md) 日志库；
 - 不在容器中运行的 **kubelet** 和**容器运行时**；
-  - 使用 **systemd 机制**的Linux上，kubelet 和容器容器运行时将日志写入到 [**journald**](../../linux/journald.md) 中。 使用`journalctl -u kubelet`查看日志。
+  - 使用 **systemd 机制**的Linux上，kubelet 和容器容器运行时将日志写入到 [**journald**](../../linux/log_and_rotate.md#journald) 中。 使用`journalctl -u kubelet`查看日志。
   - 如果没有 systemd，它们将日志写入到 `/var/log` 目录下的 `.log` 文件中
 - `/var/log` 目录中的系统组件日志，被工具 `logrotate` 执行每日轮转，或者日志大小超过 100MB 时触发轮转；
 

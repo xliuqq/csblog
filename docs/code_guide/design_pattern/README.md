@@ -59,7 +59,7 @@
 
 - [策略（strategy）](./strategy.md)
 
-- [模板方法（template）](./template)
+- [模板方法（template）](./template.md)
 
 - [访问者（visitor）](./visitor.md)
 

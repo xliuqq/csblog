@@ -142,6 +142,7 @@ nav:
       - books/data_intensive_system_book/11_streaming_processing.md
       - books/data_intensive_system_book/12_the_future.md
   - 编程指南:
+    - 设计原则: code_guide/design_principle.md
     - 设计模式: 
       - 导览: code_guide/design_pattern/README.md
       - 创建型模式:
@@ -179,6 +180,43 @@ nav:
           - 原理: languages/java/native/jni.md
           - 示例: languages/java/native/jni_demo.md
         - JNR: languages/java/native/jnr.md
+    - C和C++:
+      - ABI: languages/ccpp/abi.md
+  - linux:
+    - 基础: linux/basic.md
+    - shell编程: linux/shell_programming.md
+    - 性能调试命令: linux/tuning.md
+    - bash: linux/bash.md
+    - chmod: linux/chmod.md
+    - chroot: linux/chroot.md
+    - gnu工具: linux/binutils.md
+    - 防火墙: linux/firewall.md
+    - 名空间: linux/namespace.md
+    - cgroup: linux/cgroup.md
+    - 进程的限制: linux/limit_process.md
+    - systemctl: linux/systemctl.md
+    - 日志管理: linux/log_and_rotate.md
+    - 进程快照: linux/process_snapshot.md
+    - acls: linux/acls.md
+    - 网络: linux/network.md
+    - 文件系统: linux/fs.md
+    - 零拷贝: linux/zero_copy.md
+    - 源配置: linux/yum.md
+
+  - Web后端开发:
+    - 总览: web_backend/README.md
+    - 切面编程(Java): web_backend/aop_java.md
+    - 缓存: web_backend/cache.md
+  - CS基础:
+    - 基础: cs/cs_basic.md
+    - 操作系统: cs/cs_os.md
+    - 网络:
+      - 概述: cs/network/README.md
+      - 网络层协议: cs/network/network.md
+      - 传输层协议: cs/network/trans_protocols.md
+      - HTTP: cs/network/http.md
+      - 内网穿透: cs/network/intranet_penetration.md
+      - LVS: cs/network/LVS.md
   - 课程:
     - 操作系统设计与实现(2023): 
       - 0.整体大纲: courses/os_lab/README.md
@@ -211,12 +249,8 @@ nav:
       - 28.FAT 和 UNIX 文件系统: courses/os_lab/28_FAT_UNIX_filesystem.md
       - 29.持久数据的可靠性: courses/os_lab/29_available_durable_data.md
       - 30.课程总结: courses/os_lab/30_summarize.md
+
   - 论文:
     - go并发bugs: paper/go_concurrency_bugs.md
     - HPC中的作业调度: paper/job_scheduling_in_hpc.md
     - 可扩展性的代价: paper/scalability_but_at_what_cost.md
-  - Web后端开发:
-    - 总览: web_backend/README.md
-    - 切面编程(Java): web_backend/aop_java.md
-    - 缓存: web_backend/cache.md
-    
