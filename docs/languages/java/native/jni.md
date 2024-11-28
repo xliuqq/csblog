@@ -620,6 +620,7 @@ void SetObjectArrayElement(JNIEnv *env, jobjectArray array, jsize index, jobject
 
 // 返回原始数组的内容。结果在对应的Release<PrimitiveType>ArrayElements()函数被调用之前有效。
 // 由于返回的数组可能是Java数组的副本，对返回的数组进行的更改不一定会反映在原始数组中，直到调用Release<PrimitiveType>ArrayElements()为止。
+// 如果JVM的GC支持pin操作，NULL、JNIFALSE 才有用，表示直接返回指向原始数组的指针，x86处理器的模拟器是不支持pin
 <NativeType> *Get<PrimitiveType>ArrayElements(JNIEnv *env, <ArrayType> array, jboolean *isCopy);
 
 // 通知虚拟机本机代码不再需要访问elems.
