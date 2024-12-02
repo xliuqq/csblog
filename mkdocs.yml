@@ -172,6 +172,9 @@ nav:
         - 模板方法: code_guide/design_pattern/template.md
         - 访问者模式: code_guide/design_pattern/visitor.md
       - 分布式应用设计模式: code_guide/design_pattern/container_distributed.md
+    - 算法:
+      - 概述: code_guide/algs/README.md
+      - 散列算法: code_guide/algs/hash.md
   - 编程语言:
     - Java:
       - Native: 
