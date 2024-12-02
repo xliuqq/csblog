@@ -181,7 +181,17 @@ nav:
           - 示例: languages/java/native/jni_demo.md
         - JNR: languages/java/native/jnr.md
     - C和C++:
+      - 基础: languages/ccpp/basic.md
+      - 类: languages/ccpp/class.md
+      - 并发: languages/ccpp/concurrency.md
+      - 调试: languages/ccpp/debug.md
+      - CallPython: languages/ccpp/call_python.md
       - ABI: languages/ccpp/abi.md
+      - gcc: languages/ccpp/gcc.md
+      - make: languages/ccpp/make.md
+    - ffi: languages/libffi.md
+    - unicode: languages/unicode.md
+    - 语言自举: languages/ziju.md
   - linux:
     - 基础: linux/basic.md
     - shell编程: linux/shell_programming.md
