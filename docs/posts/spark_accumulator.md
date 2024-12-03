@@ -41,14 +41,39 @@ Driver 端的`CompletionEvent`的处理逻辑`handleTaskCompletion`，对于累�
   - 其它（`ShuffleMapTask`），更新累加器
 - Task 异常失败/被杀死：更新累加器
 
-
-
 SparkContext 中注册累加器，不暴露 AccumulatorV2 的`countFailedValues`字段，因此都为 false。
 
 - **更新的粒度是 Task 级别**，即使Task内部多次调用`add`，也只会在完成时整体更新；
 - 对于**失败的 Task，其累加器不会重复更新**（失败的Task不会发送其累加器信息)；
 - Action 是根据 **ResultTask的 `outputId`保证每个Task仅执行一次**
   - [a speculative task or a resubmitted task](https://github.com/apache/spark/pull/19877/files) 会多次执行，resubmit 的 task 不会影响（见第二点）。
+
+
+
+## 累加器的相关线程
+
+> Accumulator 不是线程安全的：[[SPARK-21425\] LongAccumulator, DoubleAccumulator not threadsafe - ASF JIRA](https://issues.apache.org/jira/browse/SPARK-21425)
+>
+> - 内部的变量，并[没有用 volatile 修饰或者使用Atomic 变量 ](https://github.com/apache/spark/pull/15065)
+
+Executor 端：
+
+- 写线程：运行任务的线程。
+- 读线程：运行任务的线程和执行器心跳线程。
+  - 当报告心跳时，executor 将收集 Accumulator中的所有当前值并报告给驱动程序。
+
+Driver端：
+
+- 写线程：
+  - 任务处理线程：`DAGSchedulerEventProcessLoop`，`handleTaskCompletion`负责累加器`merge`
+- 读线程：
+  - 心跳处理线程：只在UI上使用它们，用户代码看不到它们。如果没有同步，最坏的情况是用户无法在UI上看到最新的值，但这是可以接受的。
+  - 任务处理线程：`handleTaskCompletion`会读取`value`，将看到所有最新和正确的值。
+
+因此，如果要在Driver进程中的其它线程不能直接读取`value`的值，因为一读一写线程，
+
+- 采用`volatile`内存屏障修饰相关累加量或采用线程安全的形式。
+- 或通过 `SparkListener`监听`TaskEnd`事件中的`Accumulator`相关的信息。
 
 
 
