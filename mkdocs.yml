@@ -172,9 +172,17 @@ nav:
         - 模板方法: code_guide/design_pattern/template.md
         - 访问者模式: code_guide/design_pattern/visitor.md
       - 分布式应用设计模式: code_guide/design_pattern/container_distributed.md
+    - 整洁代码: code_guide/clean_code.md
     - 算法:
       - 概述: code_guide/algs/README.md
       - 散列算法: code_guide/algs/hash.md
+      - 布隆过滤器: code_guide/algs/bloom_filter.md
+    - 数据结构:
+      - 数组: code_guide/data_structure/array.md
+      - 链表: code_guide/data_structure/list.md
+      - 队列: code_guide/data_structure/queue.md
+      - Hash表: code_guide/data_structure/hashmap.md
+      - 树: code_guide/data_structure/tree.md
   - 编程语言:
     - Java:
       - Native: 
