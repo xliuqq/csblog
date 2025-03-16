@@ -55,9 +55,9 @@ public static void main(String[] args) {
 
 ## Instrument
 
-instrument是JVM提供的一个可以修改已加载类的类库，专门为Java语言编写的插桩服务提供支持。它需要依赖JVMTI的Attach API机制实现。
+instrument是JVM提供的一个可以修改已加载类的类库，专门为Java语言编写的插桩服务提供支持。它需要依赖JVMTI 的Attach API机制实现。
 
-- 实现它提供的ClassFileTransformer接口，定义一个类文件转换器。接口中的transform()方法会在类文件被加载时调用；
+- 实现它提供的 ClassFileTransformer 接口，定义一个类文件转换器。接口中的transform()方法会在类文件被加载时调用；
 - 在**transform**方法里，我们可以利用上文中的 ASM 或 Javassist 对传入的字节码进行改写或替换，生成新的字节码数组后返回。
 
 

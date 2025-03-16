@@ -2,7 +2,8 @@
 
 CPU Profiling 有两种实现：**Sampling** 和 **Instrumentation**
 
-
+- 基于无侵入的额外线程对所有线程的调用栈快照进行固定频率抽样，性能开销很低；
+- 利用 Instrument API，对所有必要的 Class 进行字节码增强，性能开销高；
 
 ## Sampling
 

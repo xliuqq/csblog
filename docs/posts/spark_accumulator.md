@@ -54,7 +54,7 @@ SparkContext 中注册累加器，不暴露 AccumulatorV2 的`countFailedValues`
 
 > Accumulator 不是线程安全的：[[SPARK-21425\] LongAccumulator, DoubleAccumulator not threadsafe - ASF JIRA](https://issues.apache.org/jira/browse/SPARK-21425)
 >
-> - 内部的变量，并[没有用 volatile 修饰或者使用Atomic 变量 ](https://github.com/apache/spark/pull/15065)
+> - 原生的LongAccumulator，其内部的变量，并[没有用 volatile 修饰或者使用Atomic 变量 ](https://github.com/apache/spark/pull/15065)。
 
 Executor 端：
 
