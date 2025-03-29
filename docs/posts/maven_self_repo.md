@@ -155,8 +155,6 @@ pom.xml
 
 如果配置了 mirror *，则需要忽略这个 repository-id。
 
-- 
-
 ```xml
 <!-- 配置1：
   注意: <mirrorOf>*,!your-github</mirrorOf>
