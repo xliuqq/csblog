@@ -105,15 +105,14 @@ Driver调用累加器的`merge`函数时，如何知道重算（是个已经算�
 ```scala
 // val rdd: RDD[(K, V)]
 
-val newRdd: RDD[(Int, Array[Int])] = rdd.mapPartitions(iter => {
-    val id = TaskContext.getPartitionId()
+val newRdd: RDD[(Int, Array[Int])] = rdd.mapPartitionsWithIndex((index, iter)  => {
     new Iterator[(Int, Array[Int])] {
       private var count = 0
 
       override def hasNext: Boolean = {
         val flag = iter.hasNext
         if (!flag) {
-          accum.add(id, count) // 每个分区只在完成时发送，因此只需 add 一次
+          accum.add(index, count) // 每个分区只在完成时发送，因此只需 add 一次
         }
         flag
       }
@@ -125,7 +124,8 @@ val newRdd: RDD[(Int, Array[Int])] = rdd.mapPartitions(iter => {
 })
 
 newRDD.take(10)
-
+// 多个分区变成一个分区，因此在 Executor 端会调用多次 add 函数
+newRDD.coalesce(1).count()
 newRDD.foreach()
 ```
 
