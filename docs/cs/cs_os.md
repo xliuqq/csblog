@@ -1,43 +1,102 @@
 # 操作系统
 
-## CPU 内存/缓存一致性
+## CPU 缓存/内存数据一致性
 
-### cpu cache 
-
-数据以"cache lines"的形式在cpus的cache和内存之间传输，cache line是定长的block，大小通常在16～256bytes。
+数据以"cache lines"的形式在cpus的cache和内存之间传输，cache line是定长的block，大小通常在`16～256` bytes。
 
 - cache miss 时会加载数据，一般采用组相联模式；
-- 写需要**保证所有cpu之间的一致性**，在某个cpu写数据之前需要将其它cpu cache中的相应数据移除或者"invalidated"；
 
-![cache_cpu](.pics/cs_os/cpu_cache_arch.jpg)
+<img src=".pics/cs_os/image-20241204083235090.png" alt="cpu cache" style="zoom: 50%;" />
 
-### MESI
+CPU 的缓存一致性问题应该从 2 个维度理解：
 
-**cache一致性协议**通过管理cache-line的状态来防止不一致或者数据丢失，以下介绍只**关注四种状态的MESI**缓存一致性协议。
+- **纵向：Cache 与内存的一致性问题：** 在修改 Cache 数据后，如何同步回内存？
+- **横向：多核心 Cache 的一致性问题：** 在一个核心修改 Cache 数据后，如何同步给其他核心 Cache？
 
-MESI协议，每个cache line上用2位来维护状态值"tag"，四种状态分别为：
 
-- **Modified**：处于modified状态的cache line可以认为是被这个cpu所拥有，相应的内存确保不会出现在其它cpu的cache中。这个cache拥有这份数据的**最新副本**，因此也负责将它写回内存或者移交给其它cache。
-- **Exclusive**：与modified相似，区别是这种状态下相应cpu还**未修改cache line的这份数据**，内存中的这份数据是最新的，在cache丢弃该数据前，缓存不用负责将数据写回或者移交给其它cache。
-- **Shared**：处于shared状态的cache line可能被**复制到至少一个其它的cpu cache**中，因此在该cpu存储该line时，需要先询问其它cpu，与exclusive一样，相应的**内存中的值是最新**的，在cache丢弃该数据前，不用负责将数据写回或者移交给其它cache。
-- **Invalid**：处于invalid状态的line是空的，**没有数据**，当新的数据进入cache时，将会优先被放入invalid状态的cache line中，替代其它状态的line可能引起将来的cache miss。
 
-`内存重排`（由Store Buffer、CPU乱序、编译器重排等造成）带来的内存一致性memory consistency问题，MESI协议也是处理不了的。
+### Cache 与内存的一致性
 
-- X86 上的LOCK前缀指令：原子性 + 禁止前后指令的重排序
+写直达策略（Write-Through）：每次更新 Cache 时，同步更新内存；
 
-### 内存重排
+写回策略（Write-Back）：每个 Cache 块上增加一个 **“脏（Dirty）” 标记位**，在 Cache 块被替换出去的时候将数据写回缓存：
 
-内存重排是指内存读写指令的重排，分为软件层面的`编译器重排` 和硬件层面的`CPU重排` 。
+- 写入时，数据不在Cache，需要先加载到 Cache，如果替换策略换出的旧 Cache 块是脏的，就会触发一次写回内存操作；
+- Cache Miss 时：替换策略换出的旧 Cache 块是脏的，就会触发一次写回内存操作；
+
+### MESI（缓存一致性）
+
+> [MESI在线体验网站](https://www.scss.tcd.ie/Jeremy.Jones/VivioJS/caches/MESI.htm)
+>
+> 示例：假设 A 和 B 两个CPU，线程 T 先在 CPU A 上写数据，写到 CPU A 的缓存，再切换到 CPU B 上执行，此时 CPU B 的缓存没有数据。
+>
+> - CPU B 读取时，会触发CPU A的缓存将数据写回主存，然后CPU B从主存加载到缓存，此时CPU A 和 CPU B的Cache line的状态是 Shared。
+
+缓存一致性机制需要解决的问题就是 2 点：
+
+- **特性 1 - 写传播（Write Propagation）：** 每个 CPU 核心的写入操作，需要传播到其他 CPU 核心；
+- **特性 2 - 事务串行化（Transaction Serialization）：** 各个 CPU 核心所有写入操作的顺序，在所有 CPU 核心看起来是一致。
+
+**MESI** 缓存一致性协议，每个cache line上用2位来维护状态值"tag"，四种状态分别为：
+
+- **Modified**：表明 Cache 块被修改过，但未同步回内存；
+- **Exclusive**：表明 Cache 块被当前核心独占，而其它核心的同一个 Cache 块会失效，内存跟缓存一致。
+- **Shared**：表明 Cache 块被多个核心持有且都是有效的，不用负责将数据写回或者移交给其它cache，内存跟缓存一致。
+- **Invalid**：处于invalid状态的line是空的，**没有数据**，当新的数据进入cache时，将会优先被放入invalid状态的cache line中。
+
+状态转换图如下所示：
+
+<img src="https://i-blog.csdnimg.cn/blog_migrate/cba6f14ad62f17e09b00ddbcd722c0e7.png#pic_center" alt="img" style="zoom: 67%;" />
+
+**现代的 CPU 会在增加写缓冲区和失效队列将 MESI 协议的请求异步化，以提高并行度：**
+
+- **写缓冲区（Store Buffer）**：
+  - 在写入操作之前，CPU 核心 1 需要先广播 RFO 请求获得独占权，在其它核心回应 ACK 之前，当前核心只能空等待，这对 CPU 资源是一种浪费
+  - 写入指令放到写缓冲区后并发送 RFO 请求后，CPU 就可以去执行其它任务，等收到 ACK 后再将写入操作写到 Cache 上。
+- **失效队列（Invalidation Queue）**
+  - 其他核心在收到 RFO 请求时，需要及时回应 ACK。但如果核心很忙不能及时回复，就会造成发送 RFO 请求的核心在等待 ACK。
+  - 先把其它核心发过来的 RFO 请求放到失效队列，然后直接返回 ACK，等当前核心处理完任务后再去处理失效队列中的失效请求。
+
+<img src=".pics/cs_os/mesi_store_buffer.png" alt="mesi_store_buffer.png" style="zoom:67%;" />
+
+**事实上，写缓冲区和失效队列破坏了 Cache 的一致性。** 举个例子：初始状态变量 a 和变量 b 都是 0，现在 Core1 和 Core2 分别执行这两段指令，最终 x 和 y 的结果是什么？
+
+Core1 指令
+
+```c
+a = 1; // A1
+x = b; // A2
+```
+
+Core2 指令
+
+```c
+b = 2; // B1
+y = a; // B2
+```
+
+写缓冲区造成指令重排，出现意料之外的结果
+
+![mesi_store_buffer_error.png](.pics/cs_os/mesi_store_buffer_error.png)
+
+## 顺序一致性
+
+### 内存读写指令的重排
+
+> `内存重排`（由Store Buffer、CPU乱序、编译器重排等造成）带来的内存一致性memory consistency问题，MESI协议也是处理不了的。
+>
+> - X86 上的LOCK前缀指令：原子性 + 禁止前后指令的重排序
+
+内存读写指令的重排分为软件层面的`编译器重排` 和硬件层面的`CPU重排` 。
 
 CPU重排：
 
-- CPU指令重排：并行执行、延迟执行等；
-- 缓存读写重排：先进行缓存读写操作，而不是直接对内存进行读写；
+- CPU指令重排：并行执行、延迟执行、分支预测技术等；
+- 缓存读写重排：先进行缓存读写操作，而不是直接对内存进行读写，包括 MESI 的写缓冲区和失效队列机制；
 
 ### 内存屏障类型
 
-从上面来看，barrier 有四种:
+barrier 有四种:
 
 - **LoadLoad** 阻止不相关的 Load 操作发生重排
 - **LoadStore** 阻止 Store 被重排到 Load 之前
@@ -48,16 +107,10 @@ CPU重排：
 
 目前有多种内存一致性模型：
 
-- 顺序存储模型（sequential consistency model）
-- 完全存储定序（total store order）
+- 顺序存储模型（sequential consistency model）：理想模型，没有乱序的存在。
+- 完全存储定序（total store order）：强一致性模型
 - 部分存储定序（part store order）
 - 宽松存储模型（relax memory order）
-
-### Memory Order
-
-C/C++ 中的  [memory order](https://en.cppreference.com/w/cpp/atomic/memory_order) 。
-
-[Making Sense of Acquire-Release Semantics | Dave Kilian's Blog](https://davekilian.com/acquire-release.html)
 
 
 

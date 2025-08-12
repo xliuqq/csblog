@@ -1,8 +1,16 @@
 # 并发
 
+## C/C++ 中Memory Order
+
+C/C++ 中的  [memory order](https://en.cppreference.com/w/cpp/atomic/memory_order) 。
+
+[Making Sense of Acquire-Release Semantics | Dave Kilian's Blog](https://davekilian.com/acquire-release.html)
+
+
+
 ## volatile
 
-> java 中的 volatile 既保证可见性，还具备内存屏障（防重排序）的作用。
+> Java 中的 volatile 既保证可见性，还具备内存屏障（防重排序）的作用。
 
 **编译器做的是静态乱序优化，CPU做的是动态乱序优化。**
 
@@ -11,7 +19,7 @@
 ```c
 // volatile 仅保证可见性，关键字表示每次内存数据读取都走主存（不走寄存器），避免静态乱序优化
 volatile 
-// volatile 等于编译器级别屏障，不能阻止CPU硬件级别导致的重排
+// volatile 等于编译器级别屏障，但不能阻止CPU硬件级别导致的重排
 #define barrier() __asm__ __volatile__("": : :"memory") 
     
 // CPU屏障 CPU Barrior：函数表示内存屏障/禁止指令重排序，避免动态乱序优化

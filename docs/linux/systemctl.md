@@ -20,7 +20,7 @@ update-rc.d redis defaults
 `systemd`对应的进程管理命令是`systemctl`。
 
 1. **systemctl命令兼容了service**
-   - 即systemctl也会去/etc/init.d目录下，查看，执行相关程序
+   - 即 `systemctl` 也会去`/etc/init.d`目录下，查看，执行相关程序
 2. **systemctl命令管理systemd的资源Unit**
 
 命令形式：
@@ -58,35 +58,28 @@ mount -t hugetlbfs /dev/hugepages hugetlbfs
 
 ```ini
 [Unit]
-Description:描述
-After：在network.target,auditd.service启动后才启动
-ConditionPathExists: 执行条件
+# 描述
+Description=nginx
+# 依赖的服务
+After=network.target
 
 [Service]
-EnvironmentFile:变量所在文件
-ExecStart: 执行启动脚本
-Restart: fail时重启
+# 如果服务程序启动后会通过 fork 系统调用创建子进程，然后关闭应用程序本身进程的情况，则应该将 Type 的值设置为 forking
+Type=forking 
+ExecStart=/usr/local/nginx/sbin/nginx 
+ExecReload=/usr/local/nginx/sbin/nginx -s reload 
+ExecStop=/usr/local/nginx/sbin/nginx -s quit
+# 指定在什么情况下需要重启服务进程。常用的值有 no，on-success，on-failure，on-abnormal，on-abort 和 always
+Restart=no
+# 指定运行服务的用户，会影响服务对本地文件系统的访问权限。
+User=dev
+# 是否给服务分配独立的临时空间（true/false）
+PrivateTmp=true 
 
-[Install]
-Alias:服务别名
-WangtedBy: 多用户模式下需要的
-```
-
-示例
-
-```ini
-[Unit]
-Description=Example systemd service.
-
-[Service]
-Type=simple
-ExecStart=/usr/bin/zsh ~/.local/bin/test.sh
-
-[Install]
+[Install] 
+# 当系统以多用户方式（默认的运行级别）启动时，这个服务需要被自动运行。
 WantedBy=multi-user.target
 ```
-
-
 
 ### .target
 
