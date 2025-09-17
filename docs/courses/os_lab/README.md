@@ -35,9 +35,12 @@ Mini Lab
 - [M2：最长公共子序列的并行化](./M2_plcs.md)
 - [M2: 协程库](./M2_libco.md)
 - [M3：系统调用 Profiler](M3_sperf.md)
-
 - [M4：C语言的REPL](./M4_crepl.md)
-- [M5：文件修复](./M5_filerecovery.md)
+- [M5:并行内存分配器](./M5_mymalloc.md)
+- [M6:GPT-2 并行推理](./M6_gpt.md)
+- [M7: httpd](./M7_httpd.md)
+- [M8：文件修复](./M8_filerecovery.md)
+- [M9:Key-value Database](./M9_KVDB,md)
 
 OS Lab
 

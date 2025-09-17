@@ -12,7 +12,17 @@
 
 ### 1.1. Trace 工具
 
+Trace 工具是系统编程时非常常用的问题诊断工具。trace 反应了程序执行的流程，因此可以帮助你缩小 bug 所在的范围 (调试的目标是找到第一个发生 error 的程序状态)；此外，trace 中额外的信息还能帮助诊断性能等问题 (例如你的程序是否在某个系统调用上花去了大量的时间)。除了我们熟知的 strace, ltrace，其实 trace 广泛地存在于计算机系统的各个层面上：
 
+- 操作系统内核 (例如 Linux) 提供了多种 trace 机制，有兴趣的同学可以参考 [ftrace](https://www.kernel.org/doc/html/latest/trace/ftrace.html)；
+- 浏览器的开发者模式 (F12 控制台，想必大家已经用它查看过课程网站的 slides 是如何实现的了) 中，能够 trace 网络等请求——别小看它，这也是一种 trace！而且它对调试网站的功能性问题和性能问题都是至关重要的；
+- 通过 Java Virtual Machine Tool Interface (JVMTI) 在 Java 虚拟机中创建 agent，收集程序执行的信息。
+
+在 trace 的基础上，我们实现程序的**性能诊断**工具 (虽然 strace 的设计意图本身并不主要是为了诊断性能问题)，它能够帮助你找到程序运行时耗时最多的那些系统调用，从而找到程序的性能瓶颈。[Profiler](https://en.wikipedia.org/wiki/Profiling_(computer_programming)) 能够提供系统性能分析的报告——而且这件事一点也不难，我们只要分析 trace 的输出就可以了。使用适当的工具，甚至可以根据 trace 的结果输出一个可交互的 [Flame Graph](http://www.brendangregg.com/flamegraphs.html):
+
+<img src="pics/flame-graph.svg"></img>
+
+Flame graph 是诊断性能问题的利器。
 
 ## 2. 实验描述
 

@@ -6,7 +6,7 @@
 
 例如我们在课堂上展示的 Python Shell，可以快速帮助大家解决高等数学作业、高精度计算等烦恼：
 
-![image-20240410175656675](pics/python_repl.png)
+![python_repl](pics/python_repl.png)
 
 现代程序设计语言通常都会提供交互式的模式，方便日常使用，包非解释型的程序设计语言也提供类似的设施，例如 Scala REPL、go-eval 等——当然也包括我们的 UNIX Shell！
 
