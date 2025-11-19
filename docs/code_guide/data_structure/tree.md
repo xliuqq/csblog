@@ -181,7 +181,7 @@ compaction的两个极端：
 
 - 每层允许的SST文件最大数量都有个相同的阈值；
 - memtables 首先会不停flush 到第一层很小的sstables，等到sstable数量够了（图里4个），compaction成一个sstable写到下一层，下一层sstable写满4个，再compact，如此以往；
-- 能够保证每个sstable是sorted，但是同一层 sstable 的 key 会互相覆盖（*overlapping*） 
+- ***能够保证每个sstable是sorted，但是同一层 sstable 的 key 会互相覆盖***（*overlapping*） 
 
 ##### Level compaction
 
@@ -193,7 +193,7 @@ compaction的过程可以简化成：**in memory的table写满了，那么就flu
 
 ![img](.pics/tree/lsm_leveling_compaction.webp)
 
-- **写满**的定义：sstables的大小基本固定，限制每一层的sstables的个数，超过阈值后，选择一个sstable与下一层进行合并（L1的一个sstable大致对应L2的10个sstable)；
+- **写满**的定义：sstables的大小基本固定，限制每一层的sstables的个数，***超过阈值后，选择一个sstable与下一层进行合并***（L1的一个sstable大致对应L2的10个sstable)；
 
 
 

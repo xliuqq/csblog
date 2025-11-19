@@ -51,6 +51,13 @@ libvirt是目前使用最为广泛的**对KVM虚拟机进行管理的工具和AP
 
 
 
+## OCI
+
+Open Container Initiative即开放容器计划。目前主要有两个标准文档：`容器运行时标准(runtime spec)`和`容器镜像标准(image spec)`
+
+-  `Runtime spec`：`容器运行时标准`，定义了容器状态和配置文件格式，容器生命周期管理命令格式和参数等。
+- `image spec`：`镜像标准包`，定义了容器镜像的文件系统、config 文件、manifest 文件、index 文件等。
+
 ## 容器生态
 
 容器镜像标准（image spec）。
