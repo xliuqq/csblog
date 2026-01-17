@@ -191,6 +191,8 @@ nav:
           - 原理: languages/java/native/jni.md
           - 示例: languages/java/native/jni_demo.md
         - JNR: languages/java/native/jnr.md
+      - 基准测试: languages/java/jmh.md
+      - 工具包: languages/java/packages/tools.md
     - C和C++:
       - 基础: languages/ccpp/basic.md
       - 类: languages/ccpp/class.md
@@ -273,5 +275,5 @@ nav:
 
   - 论文:
     - go并发bugs: paper/go_concurrency_bugs.md
-    - HPC中的作业调度: paper/job_scheduling_in_hpc.md
     - 可扩展性的代价: paper/scalability_but_at_what_cost.md
+    - 大规模容器文件系统: paper/large_fs_for_containers.md
