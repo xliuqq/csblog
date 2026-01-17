@@ -1,3 +1,10 @@
+---
+hide:
+  - tags
+tags:
+  - 论文
+---
+
 ## [Scalability! But at what COST?](./pdfs/2015-Scalability! But at what COST.pdf)
 
 > 分布式系统的评价指标：可扩展性 VS 性能 
@@ -31,7 +38,7 @@
 
 衡量指标——**COST**（the **C**onfiguration that **O**utperforms a **S**ingle **T**hread），超过单线程的性能所需要的配置。
 
-- 衡量分布式系统的可扩展性与系统引入的开销，不奖励带来大量但可并行开销的系统；
+- 衡量分布式系统的可扩展性与系统引入的开销，<font color='red'>**不奖励带来大量但可并行开销的系统**</font>；
 
 下图是单机的图连通分量算法（union find）和分布式图算法（Naida UF/ Slow）
 
