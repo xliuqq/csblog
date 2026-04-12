@@ -123,6 +123,7 @@ nav:
       - 数据编排Fluid: cloud/projects/fluid.md
       - 流量编排Istio: cloud/projects/istio.md
       - 应用交付KubeVela: cloud/projects/kubevela.md
+    - 容器管理系统演进: cloud/container_management_systems.md
   - 书籍:
     - books/index.md
     - 数据密集型系统设计: 
@@ -173,21 +174,61 @@ nav:
         - 访问者模式: code_guide/design_pattern/visitor.md
       - 分布式应用设计模式: code_guide/design_pattern/container_distributed.md
     - 整洁代码: code_guide/clean_code.md
+    - 代码重构: code_guide/code_refactor.md
     - 算法:
       - 概述: code_guide/algs/README.md
       - 散列算法: code_guide/algs/hash.md
       - 布隆过滤器: code_guide/algs/bloom_filter.md
+      - 缓存算法: code_guide/algs/cache.md
+      - 负载均衡算法: code_guide/algs/load_balance.md
+      - 排序算法: code_guide/algs/sort.md
+      - 数学算法: code_guide/algs/math.md
+      - 分布式算法:
+        - 分布式快照: code_guide/algs/distributed_snapshots.md
     - 数据结构:
       - 数组: code_guide/data_structure/array.md
       - 链表: code_guide/data_structure/list.md
       - 队列: code_guide/data_structure/queue.md
       - Hash表: code_guide/data_structure/hashmap.md
       - 树: code_guide/data_structure/tree.md
+      - 乒乓缓冲区: code_guide/data_structure/ping_pong_buffer.md
   - 编程语言:
     - Java:
-      - Native: 
+      - 基础: languages/java/basic.md
+      - 集合框架: languages/java/collections.md
+      - 注解: languages/java/annotation.md
+      - 字节码: languages/java/bytecode.md
+      - 类加载器: languages/java/classloader.md
+      - JVM:
+        - 概览: languages/java/jvm.md
+        - 垃圾回收: languages/java/gc.md
+        - JIT编译: languages/java/jit.md
+        - JMX监控: languages/java/jmx.md
+      - 并发编程:
+        - 概览: languages/java/concurrency/README.md
+        - 线程: languages/java/concurrency/threads.md
+        - Volatile: languages/java/concurrency/volatile.md
+        - VarHandle: languages/java/concurrency/varhandle.md
+        - 异步互斥: languages/java/concurrency/asyn_mutex.md
+        - Future模式: languages/java/concurrency/future.md
+      - 性能优化:
+        - 性能分析: languages/java/performance/analysis.md
+        - CPU性能分析: languages/java/performance/cpu_profile.md
+        - JVM性能分析: languages/java/performance/jvm_profile.md
+        - Arthas工具: languages/java/performance/arthas.md
+      - NIO: languages/java/nio.md
+      - 序列化: languages/java/serialize.md
+      - SPI机制: languages/java/spi.md
+      - 安全: languages/java/security.md
+      - 测试: languages/java/test.md
+      - 命令行工具: languages/java/cmd_tools.md
+      - Effective Java: languages/java/effective_java.md
+      - Java Agent: languages/java/agent.md
+      - 进程管理: languages/java/process.md
+      - 版本管理: languages/java/version.md
+      - Native开发:
         - 概览: languages/java/native/README.md
-        - JNI: 
+        - JNI:
           - 原理: languages/java/native/jni.md
           - 示例: languages/java/native/jni_demo.md
         - JNR: languages/java/native/jnr.md
@@ -277,3 +318,12 @@ nav:
     - go并发bugs: paper/go_concurrency_bugs.md
     - 可扩展性的代价: paper/scalability_but_at_what_cost.md
     - 大规模容器文件系统: paper/large_fs_for_containers.md
+  - 机器学习:
+    - 深度学习:
+      - 概述: machine_learning/deep_learning/README.md
+      - 激活函数: machine_learning/deep_learning/activate_functions.md
+      - 数据预处理: machine_learning/deep_learning/preprocessing.md
+      - YOLO模型: machine_learning/deep_learning/model_yolo.md
+      - Transformer: machine_learning/deep_learning/transformer.md
+  - 源码阅读:
+    - JuiceFS: source_codes_read/juicefs/README.md
