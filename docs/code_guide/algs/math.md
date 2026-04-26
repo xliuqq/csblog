@@ -29,7 +29,7 @@ for i from 0 to n−2 do
 
 ## 完美洗牌算法
 
-> [参考文献：A Simple In-Place Algorithm for In-Shuffle](https://www.alipan.com/s/QTjWDQ6a3U5)
+> [参考文献：A Simple In-Place Algorithm for In-Shuffle](./pdf/perfectShuffle.pdf)
 
 有个长度为2n的数组`{a1,a2,a3,…,an,b1,b2,b3,…,bn}`，希望排序后`{b1, a1, b2, a2,…., bn, an}`，时间复杂度`O(n)`，空间复杂度`O(1)`的解法。
 

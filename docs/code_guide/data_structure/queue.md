@@ -82,7 +82,7 @@ A **full memory barrier orders** both loads and stores but only on the CPU that 
 
 ## [LAMX Disruptor](https://github.com/lmax-exchange/disruptor)
 
-> High Performance Inter-Thread Messaging Library.
+> [High Performance Inter-Thread Messaging Library](./pdf/Disruptor-1.0.pdf).
 
 设计目标：maximize the efficiency of **memory allocation**, and operate in a **cache-friendly** manner.
 

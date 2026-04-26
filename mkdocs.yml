@@ -177,15 +177,19 @@ nav:
     - 代码重构: code_guide/code_refactor.md
     - 算法:
       - 概述: code_guide/algs/README.md
+      - 算法基础与策略: code_guide/algs/algorithm_basics.md
       - 散列算法: code_guide/algs/hash.md
       - 布隆过滤器: code_guide/algs/bloom_filter.md
       - 缓存算法: code_guide/algs/cache.md
       - 负载均衡算法: code_guide/algs/load_balance.md
       - 排序算法: code_guide/algs/sort.md
       - 数学算法: code_guide/algs/math.md
+      - 图算法: code_guide/algs/graph.md
       - 分布式算法:
+        - 概述: code_guide/algs/distributed_algs.md
         - 分布式快照: code_guide/algs/distributed_snapshots.md
     - 数据结构:
+      - 介绍: code_guide/data_structure/README.md
       - 数组: code_guide/data_structure/array.md
       - 链表: code_guide/data_structure/list.md
       - 队列: code_guide/data_structure/queue.md
@@ -315,9 +319,11 @@ nav:
       - 30.课程总结: courses/os_lab/30_summarize.md
 
   - 论文:
+    - Paper阅读概要: paper/how_to_read_a_paper.md
     - go并发bugs: paper/go_concurrency_bugs.md
     - 可扩展性的代价: paper/scalability_but_at_what_cost.md
     - 大规模容器文件系统: paper/large_fs_for_containers.md
+    - HPC中的作业调度(TODO): paper/job_scheduling_in_hpc.md
   - 机器学习:
     - 深度学习:
       - 概述: machine_learning/deep_learning/README.md
