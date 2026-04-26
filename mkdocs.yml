@@ -197,6 +197,19 @@ nav:
       - 树: code_guide/data_structure/tree.md
       - 乒乓缓冲区: code_guide/data_structure/ping_pong_buffer.md
   - 编程语言:
+    - Go:
+      - 基础: languages/go/go.md
+      - 并发编程: languages/go/concurrency.md
+      - Context: languages/go/context.md
+      - Channel: languages/go/channel.md
+      - 模块管理: languages/go/module.md
+      - 测试: languages/go/test.md
+      - 工具: languages/go/tools.md
+      - 常见错误: languages/go/go_mistakes.md
+      - 常用包:
+        - 基础包: languages/go/packages/basic.md
+        - gRPC: languages/go/packages/grpc.md
+        - Unix包: languages/go/packages/unix.md
     - Java:
       - 基础: languages/java/basic.md
       - 集合框架: languages/java/collections.md
@@ -247,6 +260,16 @@ nav:
       - ABI: languages/ccpp/abi.md
       - gcc: languages/ccpp/gcc.md
       - make: languages/ccpp/make.md
+    - Python:
+      - 基础: languages/python/basic.md
+      - 依赖管理: languages/python/dep_mangager.md
+      - 性能分析: languages/python/profile.md
+      - Cython: languages/python/cython.md
+      - Jupyter:
+        - JupyterHub: languages/python/jupyter/jupyter-hub.md
+      - 常用包:
+        - Java-Python交互: languages/python/packages/java_python.md
+        - 资源限制: languages/python/packages/resource_limit.md
     - ffi: languages/libffi.md
     - unicode: languages/unicode.md
     - 语言自举: languages/ziju.md

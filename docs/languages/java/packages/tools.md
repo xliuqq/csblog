@@ -324,4 +324,13 @@ Imgcodecs.imwrite(imageOutPath, src, dstImage);
 ```
 
 
+##  HTTP 客户端
 
+### [Apache HttpComponents](http://hc.apache.org/) 
+HttpCore is a set of low level HTTP transport components that can be used to build custom client and server side HTTP services with a minimal footprint.
+
+HttpClient is a HTTP/1.1 compliant HTTP agent implementation based on HttpCore. 
+
+### [Forest](https://forest.kim/pages/1.7.x/java_install/#%E4%BE%9D%E8%B5%96)
+
+声明式与编程式双修，适配集成 Springboot、Spring 等多种不同的项目环境，也可直接在普通的 Java 项目中使用。
