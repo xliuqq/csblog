@@ -55,7 +55,7 @@ service Identity {
 
 ### Node接口
 
-- **NodeStageVolume**：如果存储卷没有格式化，首先要格式化。然后**把存储卷mount到一个临时的目录**(这个目录通常是节点上的一个全局目录)。再通过NodePublishVolume将存储卷mount到pod的目录中。**mount过程分为2步，原因是为了支持多个pod共享同一个volume(如NFS)**。
+- **NodeStageVolume**：**为 PV 做一次全局准备**。如果存储卷没有格式化，首先要格式化，然后**把存储卷mount到一个临时的目录**(这个目录通常是节点上的一个全局目录)。再通过NodePublishVolume将存储卷mount到pod的目录中。**mount过程分为2步，原因是为了支持多个pod共享同一个volume(如NFS)**。
 
 - **NodePublishVolume**：将存储卷**从临时目录mount到目标目录(pod目录)**，Pod创建时才会进行该操作；
 

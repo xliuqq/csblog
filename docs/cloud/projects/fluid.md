@@ -28,12 +28,12 @@
 ### 原理和流程
 
 - DataSet声明数据集的来源，**Runtime选择node打标签由K8s进行worker调度**；
-- CSI-Plugin作为Deamonset挂载宿主机的`/runtime-mnt`，当Pod挂载PVC时，将对应的`/runtime-mnt`的子目录bind挂载到容器；
-- APP Pod 获取数据是，会触发宿主机`/runtime-mnt`的文件操作，触发FUSE容器通过Alluxio Worker中获取数据；
-  - PVC的数据读取通过CSI-Plugin和FUSE实现，**CSI-Plugin 和 FUSE DaemonSet都挂载宿主机的相同目录（/runtime-mnt）**；
-  - FUSE DaemonSet的本地挂载目录为`/runtime-mnt/alluxio/default/demo`，后两个为*dataset  namespace*和*name*；
-  - Alluxio Worker 根据 DataSet 中声明的远程路径，进行数据操作；
-- Pod选定Runtime的节点，通过webhook通过节点亲和性进行处理；
+- PVC的数据读取通过 CSI-Plugin 和 FUSE 实现，**CSI-Plugin 和 FUSE DaemonSet都挂载宿主机目录（/runtime-mnt）到容器的同名目录（/runtime-mnt）**；
+  - CSI Plugin 先通过 patch node label，使得 FUSE DaemonSet 满足亲和性，可以创建其 Pod；
+  - CSI Plugin 会先通过 `bind mount ` 将 `/runtime-mnt` 关联到 Pod 所使用的 PVC 的 path；
+  - Fuse Pod 通过 Alluxio 的相关命令，将  `/runtime-mnt`  挂载到 Alluxio 文件系统上；
+
+- Pod选定 Runtime 的节点，通过webhook通过节点亲和性进行处理；
 
 Alluxio Runtime会创建`**-config`存储Alluxio集群的相关配置信息，供FUSE使用；
 
