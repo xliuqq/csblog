@@ -6,7 +6,7 @@
 
 ## 编译
 
-Cython 会先把 .PXD,    .PY,   .PYW,  .PYX 文件转换成 .C 中间代码， 再编译成 windows中.pyd和linux中.so文件。
+Cython 会先把 `.PXD,.PY,.PYW,.PYX` 文件转换成 `.C` 中间代码， 再编译成 windows中`.pyd`和linux中`.so`文件。
 
 **cython**
 
@@ -19,7 +19,7 @@ Cython 会先把 .PXD,    .PY,   .PYW,  .PYX 文件转换成 .C 中间代码， 
 cythonize -a -i yourmod.pyx
 ```
 
-- 将`py`或`pyx`文件编译成C/C++文件，将C/C++文件编译成扩展模块，可以直接从python中导入。
+- 将`py`或`pyx`文件编译成 C/C++ 文件，将 C/C++ 文件编译成扩展模块，可以直接从python 中导入。
 - 接收多个源文件和glob模式如`**/*.pyx`
 
 ### pyx文件
@@ -32,11 +32,7 @@ Cython头文件。
 
 ### pyd文件
 
-.pyd 文件是由非 Python的编程语言编写 (或直接把 .py 文件转换成 .c 中间文件) 编译生成的 Python 扩展模块，是类似 .so, .dll 动态链接库的一种 Python 文件。
+.pyd 文件是由非 Python的编程语言编写 (或直接把 .py 文件转换成 .c 中间文件) 编译生成的 Python 扩展模块，是类似 `.so, .dll` 动态链接库的一种 Python 文件。
 
 Cython 可将个人基于 Python 语言编写的 Python 模块编译成具有 C 语言特性的 .pyd 文件。
-
-
-
-## 
 

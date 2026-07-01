@@ -4,19 +4,19 @@
 
 ### CPython
 
-**官方**版本的解释器：Cpython，用C语言开发的，运行python，就是启动CPython解释器，CPython是使用最广的Python解释器
+**官方**版本的解释器：Cpython，用 C 语言开发的，运行 python，就是启动 CPython 解释器，CPython 是使用最广的Python解释器。
 
 ### IPython
 
-IPython是基于CPython之上的一个**交互式**解释器
+IPython是基于 CPython 之上的一个**交互式**解释器。
 
 ### PyPy
 
-PyPy是用Python实现的解释器，PyPy采用 JIT 技术，对 Python 代码进行动态编译
+PyPy 是用 Python 实现的解释器，PyPy 采用 JIT 技术，对 Python 代码进行动态编译。
 
 ### Jython
 
-Jython是运行在Java平台上的Python解释器，可以直接把Python代码编译成Java字节码执行
+Jython是运行在Java平台上的Python解释器，可以直接把Python代码编译成Java字节码执行。
 
 
 ## 字符串
