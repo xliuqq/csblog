@@ -295,9 +295,9 @@ nav:
     - 源配置: linux/yum.md
 
   - Web后端开发:
-    - 总览: web_backend/README.md
-    - 切面编程(Java): web_backend/aop_java.md
-    - 缓存: web_backend/cache.md
+    - 总览: web/backend/README.md
+    - 切面编程(Java): web/backend/aop_java.md
+    - 缓存: web/backend/cache.md
   - CS基础:
     - 基础: cs/cs_basic.md
     - 操作系统: cs/cs_os.md

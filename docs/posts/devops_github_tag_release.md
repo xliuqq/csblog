@@ -13,7 +13,7 @@ categories:
 
 
 
-在 Github 上发布 Release 时，默认只会发布源码的zip包，但是有时候会想要将一些编译出来的文件也放在 Release 中。虽然可以在本地编译，然后通过界面手动上传。但是可以基于 Github Action 实现自动发布。
+在 Github 上发布 Release 时，默认只会发布源码的zip包，但是有时候会想要将一些编译出来的文件也放在 Release 中。虽然可以在本地编译，然后通过界面手动上传。但是可以**基于 Github Action 实现自动发布**。
 
 
 

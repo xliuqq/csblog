@@ -1,5 +1,34 @@
 # Git（源码管理标准）
 
+## 源码控制分支模型
+
+### TrunkBased 分支模型
+
+主干开发 Trunk‑Based Development（TBD）+ 多维护分支 + 版本向后移植 (backport)的 Apache 经典开源模式
+
+- 使用**主干作为新功能开发**主线，**分支用作发布，维护对应 X.Y.z 的小版本迭代**；
+- **所有补丁源头优先 master，稳定分支只做 backport，不做功能开发**；
+- **没有分支合并的工作量**，因此比较简单；
+- **被广泛的应用于开源项目**， 如 Apache Hadoop / Spark 等；
+
+![主干开发](pics/git/主干开发.jpeg)
+
+### Git-flow 分支模型
+
+> 在坚持持续集成实践的情况下，feature 分支是一件非常矛盾的事情。持续集成鼓励更加频繁的代码集成和交互，让冲突越早解决越好。feature 分支的代码隔离策略却在尽可能推迟代码的集成。
+
+稳定主干
+
+- **master**: 主分支，主要用来版本发布，HEAD 一直指向 可用于生产环境 的状态
+- **hotfix**：线上 bug 紧急修复用到的临时分支。这个分支用来修复主线 master 的BUG
+- **release**（预发布分支）：release 分支可以认为是 master 分支的未测试版。比如说某一期的功能全部开发完成，那么就将 develop 分支合并到 release 分支，测试没有问题并且到了发布日期就合并到 master 分支，进行发布。
+- **develop**（相当于release的预分支）：**日常开发分支，该分支正常保存了开发的最新代码**。
+  - 反映下一个版本的最新开发状况
+
+- **feature**：具体的功能开发分支，只与 develop 分支交互，出现在 dev 时是个单个 commit。
+
+<img src="pics/git/git_branch_model_all.png" alt="在这里插入图片描述" style="zoom:67%;" />
+
 ## 命令
 
 ### 基本(clone/pull/push/branch)
