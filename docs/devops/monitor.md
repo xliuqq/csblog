@@ -18,6 +18,14 @@ Trace (链路)：完整记录**这条 trace_id 请求从头到尾所有（分布
 
 ## Metrics SDK 
 
+Counter（计数器）：只能递增，不能减少；可重置（进程重启归零）；
+
+Gauge（仪表盘）：代表**当前时刻的值**，任意上下浮动，瞬时快照值；
+
+Histogram（直方图）：记录观测样本落在各个区间（bucket，预定义，不可调）的数量，服务端可以动态计算分位数，用于分布统计；
+
+Summary（摘要）：客户端直接预先计算分位数，不能多实例聚合，分位数固定设置；
+
 ### 节点指标 [Node Exporter](https://github.com/prometheus/node_exporter)
 
 Go 二进制提供，隶属Prometheus 生态，用于获取节点的基本运行信息。
@@ -46,9 +54,18 @@ Pull 模型，业务进程内置指标内存状态，暴露 `/metrics` HTTP 接�
 >
 > Prometheus Agent 模式是 Prometheus v2.32.0 引入的一项新特性，旨在优化指标抓取和远程写入的能力。Agent 模式**禁用了 Prometheus 的查询、告警和本地存储功能**，专注于指标的抓取和远程写入。
 
-目标服务动态发现
+#### 架构
 
-单机限制：
+![prometheus_arch](./.pics/monitor/prometheus_arch.png)
+
+Prometheus的基本原理是通过**HTTP协议周期性抓取被监控组件的状态**。
+
+- 支持配置目标服务动态发现：通过`http`接口定时获取所有 `target` 信息；
+- 在**本地存储抓取的所有数据**，并通过一定规则进行清理和整理数据，并把得到的结果**存储到新的时间序列**中
+
+
+
+#### 单机限制
 
 1. 采集压力：（经验值）单实例无远程存储，常规稳定上限 **10 万～25 万 samples/sec**（取决于磁盘、**标签基数**）
 
@@ -119,6 +136,43 @@ quantile(0.9, go_gc_duration_seconds)
 # CPU：进程CPU使用率
 rate(process_cpu_seconds_total[5m])
 ```
+
+#### 配置
+
+启动时：`--storage.tsdb.retention=90d `，数据的保留时间。
+
+```yaml
+global:
+  scrape_interval:     15s # Set the scrape interval to every 15 seconds. Default is every 1 minute.
+  evaluation_interval: 15s # Evaluate rules every 15 seconds. The default is every 1 minute.
+  # scrape_timeout is set to the global default (10s).
+ 
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+  - static_configs:
+    - targets:
+      # - alertmanager:9093
+ 
+# Load rules once and periodically evaluate them according to the global 'evaluation_interval'.
+rule_files:
+  # - "first_rules.yml"
+  # - "second_rules.yml"
+ 
+# A scrape configuration containing exactly one endpoint to scrape:
+# Here it's Prometheus itself.
+scrape_configs:
+  # The job name is added as a label `job=<job_name>` to any timeseries scraped from this config.
+  - job_name: 'pushgateway'
+  	# 指标样本自身携带的标签优先级更高（默认 false），对于 PushGateway 指标需要设置 true
+    honor_labels: true		
+    # metrics_path defaults to '/metrics'
+    # scheme defaults to 'http'.
+    static_configs:
+    - targets: ['localhost:9090']
+```
+
+
 
 ### 短时作业
 
@@ -208,5 +262,4 @@ url =
 
 **OpenObserve**：OTel 原生、统一存储 Logs/Metrics/Traces，可以使用 [Otel 官方埋点库](https://github.com/open-telemetry/opentelemetry-java-instrumentation)。
 
-
-
+**[Sentry](https://github.com/getsentry/sentry)** ：**专注「异常崩溃、堆栈快照、错误聚合」的开发者导向错误追踪平台**。

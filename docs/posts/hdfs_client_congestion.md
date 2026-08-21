@@ -52,7 +52,7 @@ public PipelineAck.ECN getECN() {
 
 ### 拥塞的判断
 
-`系统平均负载 > 1.5 * 核数`(Hadoop 3.4 版本可配置)，注意 $负载 \ne 利用率 $
+`系统平均负载 > 1.5 * 核数`(Hadoop 3.4 版本可配置)，注意 $负载 \ne 利用率$
 
 > The v0 patch allows the datanode to signal congestion when the load of the system is **over 1.5 times of the number of available cores**, which means that there are **at least 50% more processes are waiting to be scheduled** in the OS. We found it an effective metric to signal that the DNs are undergoing massive amount of writes.
 
