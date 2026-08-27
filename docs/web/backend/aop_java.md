@@ -128,7 +128,7 @@ AspectJ属于**编译时增强**，在运行前织入的，分为三类：
   - 需要**特殊的编译器**
 - **加载时织入**：在加载类的时候进行织入，使用**AspectJ agent**
 
-![img](pics/springaop_aspectj.png)
+![img](./pics/aop_java/springaop_aspectj.png)
 
 
 
@@ -147,4 +147,4 @@ Spring AOP 基于**动态代理**来实现的，在容器启动时需要生成�
 
 - **Spring AOP无法代理new出来的对象，只能代理被spring容器管理的对象**
 
-![spring-aop-vs-aspectj.spring-aop](pics/spring-aop-vs-aspectj.spring-aop.png)
+![spring-aop-vs-aspectj.spring-aop](./pics/aop_java/spring-aop-vs-aspectj.spring-aop.png)

@@ -298,6 +298,48 @@ nav:
     - 总览: web/backend/README.md
     - 切面编程(Java): web/backend/aop_java.md
     - 缓存: web/backend/cache.md
+    - 事件总线: web/backend/event_bus.md
+    - 表达式引擎: web/backend/expression_engine.md
+    - 流程引擎: web/backend/flow_engine.md
+    - 分布式ID生成: web/backend/id_generator.md
+    - 认证与授权:
+      - 总览: web/authentication.md
+      - 认证: web/authentication.md
+      - 授权(RBAC): web/authorization.md
+      - 安全: web/security.md
+    - 状态机: web/backend/statemachine.md
+    - 规则引擎: web/backend/rule_engine.md
+    - SaToken: web/backend/satoken.md
+  - Web前端:
+    - 断点续传: web/front/breakpoint_resume.md
+    - 低代码引擎: web/front/lowcode_engine.md
+  - 数据系统:
+    - 概述: data_system/README.md
+    - 对象存储与文件存储对比: data_system/object_file_compare.md
+    - SQL 系统:
+      - Apache Calcite: data_system/sql_system.md
+      - 数据字典: data_system/sql_system.md
+      - 位图索引: data_system/sql_system.md
+      - 数据仓库: data_system/sql_system.md
+  - 调度系统:
+    - 概述: scheduler_system/README.md
+    - 工作流调度:
+      - Argo Workflow: scheduler_system/workflow_scheduler/argoworkflow.md
+      - DolphinScheduler: scheduler_system/workflow_scheduler/dophine_scheduler.md
+    - 资源调度:
+      - Kubernetes Kueue: scheduler_system/resource_scheduler/kueue.md
+      - Volcano: scheduler_system/resource_scheduler/volcano.md
+      - YARN:
+        - 概述: scheduler_system/resource_scheduler/yarn/yarn.md
+        - 配置: scheduler_system/resource_scheduler/yarn/conf.md
+        - 资源模型: scheduler_system/resource_scheduler/yarn/yarn_resource_model.md
+        - 服务管理: scheduler_system/resource_scheduler/yarn/yarn_service.md
+        - 弹性伸缩: scheduler_system/resource_scheduler/yarn/graceful_decommission.md
+        - GPU 支持: scheduler_system/resource_scheduler/yarn/gpu.md
+        - 调度策略: scheduler_system/resource_scheduler/yarn/scheduler.md
+        - 节点标签属性: scheduler_system/resource_scheduler/yarn/node_label_attributes.md
+        - Cgroup: scheduler_system/resource_scheduler/yarn/cgroup.md
+        - 应用编写: scheduler_system/resource_scheduler/yarn/write_applications.md
   - CS基础:
     - 基础: cs/cs_basic.md
     - 操作系统: cs/cs_os.md
