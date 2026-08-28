@@ -251,6 +251,9 @@ nav:
         - JNR: languages/java/native/jnr.md
       - 基准测试: languages/java/jmh.md
       - 工具包: languages/java/packages/tools.md
+      - 日志: languages/java/log.md
+    - Scala:
+      - 基础: languages/scala/basic.md
     - C和C++:
       - 基础: languages/ccpp/basic.md
       - 类: languages/ccpp/class.md
@@ -310,6 +313,11 @@ nav:
     - 状态机: web/backend/statemachine.md
     - 规则引擎: web/backend/rule_engine.md
     - SaToken: web/backend/satoken.md
+    - 权限管理: web/backend/permission.md
+    - Maven: web/backend/maven.md
+    - 模板引擎: web/backend/template_engine.md
+  - Web网关:
+    - APISix: web/gateway/APISix.md
   - Web前端:
     - 断点续传: web/front/breakpoint_resume.md
     - 低代码引擎: web/front/lowcode_engine.md
@@ -389,6 +397,8 @@ nav:
     - 可扩展性的代价: paper/scalability_but_at_what_cost.md
     - 大规模容器文件系统: paper/large_fs_for_containers.md
     - HPC中的作业调度(TODO): paper/job_scheduling_in_hpc.md
+    - SkillLens — Model Generated Agent Skills: paper/SkillLens_study_of_Model_Generated_Agent_Skills.md
+    - SkillOpt — Self-Evolving Agent Skills: paper/SkillOpt_self_evolving_agent_skills.md
   - 机器学习:
     - 深度学习:
       - 概述: machine_learning/deep_learning/README.md
@@ -398,3 +408,11 @@ nav:
       - Transformer: machine_learning/deep_learning/transformer.md
   - 源码阅读:
     - JuiceFS: source_codes_read/juicefs/README.md
+  - DevOps:
+    - 概述: devops/README.md
+    - 制品库:
+      - 概述: devops/artifacts.md
+      - Nexus: devops/artifact_repo.md
+    - 数据库运维: devops/dbops.md
+    - Git: devops/git.md
+    - 可观测性: devops/monitor.md
